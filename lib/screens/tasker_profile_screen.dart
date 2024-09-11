@@ -1,0 +1,646 @@
+import 'package:fit_pro_client/models/tasker.dart';
+import 'package:fit_pro_client/screens/waiting_screen.dart';
+import 'package:fit_pro_client/utils/constants.dart';
+import 'package:fit_pro_client/widgets/video_player_widget.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+class TaskerProfileScreen extends StatefulWidget {
+  final Tasker tasker;
+
+  const TaskerProfileScreen({super.key, required this.tasker});
+
+  @override
+  State<TaskerProfileScreen> createState() => _TaskerProfileScreenState();
+}
+
+class _TaskerProfileScreenState extends State<TaskerProfileScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildProfileSection(),
+                _buildPresentationProfileSection(),
+                _buildTasksSection(),
+                _buildClientReviewsSection(),
+                _buildScheduleSection(),
+                SizedBox(height: 120.h)
+              ],
+            ),
+          ),
+          // Floating buttons at the bottom
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              color: AppColors.white.withOpacity(0.9),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const WaitingScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.flash_on, color: AppColors.black),
+                    label: Text(
+                      'Porosit për punë', 
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        color: AppColors.black,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.tomatoRed,
+                      minimumSize: Size(double.infinity, 50.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      // Handle button press
+                    },
+                    icon: const Icon(Icons.close, color: AppColors.black),
+                    label: Text(
+                      'Hiq dorë', 
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        color: AppColors.black,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.grey300,
+                      minimumSize: Size(double.infinity, 50.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileSection() {
+    return Container(
+      color: Colors.white,
+      padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 16.w),
+      child: Column(
+        children: [
+          Container(
+            color: AppColors.tomatoRedLight,
+            width: double.infinity,
+            padding: EdgeInsets.all(16.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Ky është profesionisti me afër jush !',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20.sp,
+                  ),
+                ),
+                SizedBox(height: 30.h),
+                Text(
+                  'Zgjidhni atë per të kryer punën tuaj ose refuzo për të parë detajet e nje ofruesi tjetër...',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14.sp,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 20.h),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 40,
+                backgroundImage: AssetImage(widget.tasker.profileImage),
+              ),
+              SizedBox(width: 16.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.tasker.fullName,
+                      style: TextStyle(
+                        fontSize: 22.sp,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.black,
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
+                    Text(
+                      'Profesionist me përvoja në fusha të ndryshme',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: AppColors.grey700,
+                      ),
+                    ),
+                    SizedBox(height: 12.h),
+                    Row(
+                      children: [
+                        Icon(Icons.verified, size: 20.w, color: AppColors.grey700),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: Text(
+                            'Të gjitha shërbimet janë të garantuara',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.black,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      'Ju mund të kërkoni një shërbim tjetër ose rimbursim',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: AppColors.grey700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.h),
+          Row(
+            children: [
+              Icon(Icons.build, size: 20.w, color: AppColors.grey700),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Text(
+                  'Ofron shërbime të riparimit në shtëpi',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.black,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPresentationProfileSection() {
+    return Container(
+      color: AppColors.grey100,
+      padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 16.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8.0.r),
+                child: Image.asset(
+                  'assets/images/taskerthumbnail1.jpg',
+                  height: 180.h,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              Positioned(
+                bottom: 8.h,
+                right: 8.w,
+                child: CircleAvatar(
+                  backgroundColor: AppColors.tomatoRed,
+                  radius: 26.r,
+                  child: Center(
+                    child: IconButton(
+                      icon: const Icon(Icons.play_arrow, color: AppColors.white),
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          barrierColor: Colors.black.withOpacity(0.7),
+                          builder: (context) => const VideoPlayerWidget(videoUrl: 'assets/videos/sample_video.mp4'),
+                        );
+                      }
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildProfileDetail(Icons.star, '4.9', '48 vlerësime'),
+              _buildProfileDetail(Icons.handyman, '350', 'punë të kryera'),
+              _buildProfileDetail(null, '2.000 Lek', 'për orë pune'),
+            ]
+          ),
+          SizedBox(height: 12.h),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTasksSection() {
+    return Container(
+      color: Colors.white,
+      padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 16.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Rreth meje',
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            'Jam shumë i përkushtuar për riparimet në shtëpi dhe mendoj se ju do të përfitoni një shërbim cilësor, një perspektivë të re për mirëmbajtjen e shtëpisë dhe një ambient më të sigurt e funksional.',
+            style: TextStyle(
+              fontSize: 12.sp,
+            ),
+          ),
+          SizedBox(height: 16.h),
+          Text(
+            'Unë punoj',
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 16.h),
+          Wrap(
+            spacing: 8.w,
+            runSpacing: 8.h,
+            children: [
+              _buildTaskChip('Riparim Dyer/Dritare', AppColors.tomatoRed.withOpacity(0.8)),
+              _buildTaskChip('Instalim Pajisjesh të ndryshme', AppColors.tomatoRed.withOpacity(0.8)),
+              _buildTaskChip('Lyerje Muresh', AppColors.tomatoRed.withOpacity(0.7)),
+              _buildTaskChip('Montim Mobiliesh', AppColors.tomatoRed.withOpacity(0.6)),
+              _buildTaskChip('Rregullime Hidraulike', AppColors.tomatoRed.withOpacity(0.6)),
+              _buildTaskChip('Riparime Elektrike', AppColors.tomatoRed.withOpacity(0.5)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildClientReviewsSection() {
+    return Container(
+      color: AppColors.grey100,
+      padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 16.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Çfarë thonë klientët e mi',
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 16.h),
+          Row(
+            children: [
+              Text(
+                '4.9',
+                style: TextStyle(
+                  fontSize: 28.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(width: 8.w),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.star, color: AppColors.tomatoRed, size: 24.w),
+                      Icon(Icons.star, color: AppColors.tomatoRed, size: 24.w),
+                      Icon(Icons.star, color: AppColors.tomatoRed, size: 24.w),
+                      Icon(Icons.star, color: AppColors.tomatoRed, size: 24.w),
+                      Icon(Icons.star, color: AppColors.tomatoRed, size: 24.w),
+                    ],
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    '48 vlerësime',
+                    style: TextStyle(fontSize: 12.sp, color: AppColors.grey700),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          SizedBox(height: 16.h),
+          _buildRatingBar(5, 46),
+          _buildRatingBar(4, 2),
+          _buildRatingBar(3, 0),
+          _buildRatingBar(2, 0),
+          _buildRatingBar(1, 0),
+          SizedBox(height: 16.h),
+          const Divider(),
+          SizedBox(height: 16.h),
+          _buildReview(
+            'Harriet',
+            '27 Shkurt, 2023',
+            'Jam shumë e kënaqur me riparimin e lavatriçes time! Gentiani ishte shumë profesionist dhe i saktë. Do ta rekomandoja patjetër!',
+            'assets/images/tasker2.jpg',
+          ),
+          SizedBox(height: 16.h),
+          _buildReview(
+            'Aurora',
+            '25 Janar, 2023',
+            'Punëtor i mrekullueshëm! Ai e bëri montimin e mobilieve shumë të lehtë dhe i sqaroi të gjitha detajet në mënyrë të thjeshtë.',
+            'assets/images/tasker4.jpg',
+          ),
+          SizedBox(height: 8.h),
+          TextButton(
+            onPressed: () {
+              // Add your onPressed action here
+            },
+            child: Text(
+              "Shiko te gjitha...",
+              style: TextStyle(
+                color: AppColors.tomatoRed,
+                fontSize: 12.sp,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScheduleSection() {
+    return Container(
+      color: Colors.white,
+      padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 16.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Disponibiliteti im',
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 16.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back_ios),
+                onPressed: () {
+                  // Handle back navigation
+                },
+              ),
+              Text(
+                'Aug 17–23',
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.arrow_forward_ios),
+                onPressed: () {
+                  // Handle forward navigation
+                },
+              ),
+            ],
+          ),
+          SizedBox(height: 16.h),
+          Container(
+            height: 2.h,
+            color: AppColors.grey300,
+          ),
+          SizedBox(height: 8.h),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildDayColumn('Sat', 17, []),
+                _buildDayColumn('Sun', 18, []),
+                _buildDayColumn('Mon', 19, [
+                  '16:00',
+                  '17:00',
+                  '18:00',
+                  '19:00',
+                ]),
+                _buildDayColumn('Tue', 20, [
+                  '09:00',
+                  '11:00',
+                  '18:00',
+                  '19:00',
+                ]),
+                _buildDayColumn('Wed', 21, [
+                  '09:00',
+                  '11:00',
+                  '13:00',
+                  '14:00',
+                ]),
+                _buildDayColumn('Thu', 22, [
+                  '09:00',
+                  '11:00',
+                  '12:00',
+                  '13:00',
+                ]),
+                _buildDayColumn('Fri', 23, [
+                  '17:00',
+                  '18:00',
+                  '19:00',
+                  '20:00',
+                ]),
+              ],
+            ),
+          ),
+          SizedBox(height: 16.h),
+          TextButton(
+            onPressed: () {
+              // Handle "View full schedule" action
+            },
+            child: Text(
+              'Shiko disponibilitetin e plote',
+              style: TextStyle(
+                color: AppColors.tomatoRed,
+                fontSize: 14.sp,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTaskChip(String task, Color color) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(8.r),
+      ),
+      child: Text(
+        task,
+        style: TextStyle(
+          color: AppColors.black,
+          fontSize: 12.sp,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRatingBar(int stars, int reviewsCount) {
+    return Row(
+      children: [
+        Text('$stars', style: TextStyle(fontSize: 16.sp)),
+        Icon(Icons.star, color: AppColors.tomatoRed, size: 16.w),
+        SizedBox(width: 8.w),
+        Expanded(
+          child: LinearProgressIndicator(
+            value: reviewsCount / 50,
+            backgroundColor: Colors.grey[300],
+            color: AppColors.tomatoRed,
+            minHeight: 8.h,
+          ),
+        ),
+        SizedBox(width: 8.w),
+        Text('($reviewsCount)', style: TextStyle(fontSize: 16.sp)),
+      ],
+    );
+  }
+
+  Widget _buildReview(String name, String date, String review, String imagePath) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CircleAvatar(
+          radius: 24.r,
+          backgroundImage: AssetImage(imagePath),
+        ),
+        SizedBox(width: 16.w),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                date,
+                style: TextStyle(fontSize: 14.sp, color: AppColors.grey700),
+              ),
+              SizedBox(height: 8.h),
+              Row(
+                children: [
+                  Icon(Icons.star, color: AppColors.tomatoRed, size: 12.w),
+                  Icon(Icons.star, color: AppColors.tomatoRed, size: 12.w),
+                  Icon(Icons.star, color: AppColors.tomatoRed, size: 12.w),
+                  Icon(Icons.star, color: AppColors.tomatoRed, size: 12.w),
+                  Icon(Icons.star, color: AppColors.tomatoRed, size: 12.w),
+                ],
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                review,
+                style: TextStyle(fontSize: 12.sp),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDayColumn(String day, int date, List<String> times) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 8.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            day,
+            style: TextStyle(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.bold,
+              color: AppColors.grey700,
+            ),
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            date.toString(),
+            style: TextStyle(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Column(
+            children: times.map((time) {
+              return Padding(
+                padding: EdgeInsets.symmetric(vertical: 4.h),
+                child: Text(
+                  time,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: AppColors.black,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileDetail(IconData? icon, String value, String label) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            if (icon != null) ...[
+              Icon(icon, color: AppColors.black, size: 16.w),
+              SizedBox(width: 4.w),
+            ],
+            Text(value, style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        SizedBox(height: 4.h),
+        Text(label, style: TextStyle(fontSize: 12.sp, color: AppColors.grey700)),
+      ],
+    );
+  }
+}
