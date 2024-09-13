@@ -86,7 +86,7 @@ class _HomeContentState extends State<HomeContent> {
   bool _isLoading = true;
   bool _hasPrecachedImages = false;
 
-  final List<Map<String, String>> categories = [
+final List<Map<String, String>> categories = [
     {'name': 'Montim mobiliesh', 'imagePath': 'assets/images/montim_mobiliesh.jpg'},
     {'name': 'Patinime muresh', 'imagePath': 'assets/images/patinime_muresh.jpg'},
     {'name': 'Lyerje muresh', 'imagePath': 'assets/images/lyerje_muresh.jpg'},
@@ -99,7 +99,20 @@ class _HomeContentState extends State<HomeContent> {
     {'name': 'Punime elektrike', 'imagePath': 'assets/images/punime_elektrike.jpg'},
     {'name': 'Punime druri', 'imagePath': 'assets/images/punime_druri.jpg'},
     {'name': 'Vjelje ullinjsh', 'imagePath': 'assets/images/vjelje_ullinjsh.jpg'},
+    {'name': 'Karrotrec', 'imagePath': 'assets/images/karrotrec.jpg'},
+    {'name': 'Montim kamerash', 'imagePath': 'assets/images/montim_kamerash.jpg'},
+    {'name': 'Riparim dushi', 'imagePath': 'assets/images/riparime_banjo.jpg'},
+    {'name': 'Instalim paneli', 'imagePath': 'assets/images/instalim_panelesh_diellore.jpg'},
+    {'name': 'Riparime çatie', 'imagePath': 'assets/images/riparim_catie.jpg'},
+    {'name': 'Pastrim oxhaqesh', 'imagePath': 'assets/images/pastrim_oxhaqesh.jpg'},
+    {'name': 'Punime me gips', 'imagePath': 'assets/images/punime_gipsi.jpg'},
+    {'name': 'Instalim ndriçimi', 'imagePath': 'assets/images/instalim_ndricimi.jpg'},
+    {'name': 'Shtrim pllakash', 'imagePath': 'assets/images/shtrim_pllakash.jpg'},
+    {'name': 'Pastrim pishinash', 'imagePath': 'assets/images/pastrim_pishinash.jpg'},
+    {'name': 'Pastrim xhamash', 'imagePath': 'assets/images/pastrim_dyer_dritare.jpg'},
+    {'name': 'Larje tapeti', 'imagePath': 'assets/images/larje_tapeti.jpg'},
   ];
+
 
   @override
   void initState() {
@@ -128,7 +141,7 @@ class _HomeContentState extends State<HomeContent> {
       _isLoading = true;
     });
 
-    await Future.delayed(const Duration(seconds: 1));
+    await Future.delayed(const Duration(milliseconds: 100));
 
     await _precacheImages();
 

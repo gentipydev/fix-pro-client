@@ -1,3 +1,4 @@
+import 'package:fit_pro_client/screens/tasker_map_screen.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:fit_pro_client/widgets/custom_rectangular_fab.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:logger/logger.dart';
 import 'package:timer_count_down/timer_count_down.dart';
 import 'package:lottie/lottie.dart';
+import 'package:another_flushbar/flushbar.dart';
 
 class WaitingScreen extends StatefulWidget {
   const WaitingScreen({super.key});
@@ -18,10 +20,38 @@ class WaitingScreenState extends State<WaitingScreen> {
   static const int countdownDuration = 3600;
 
   @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 3), () {
+      _showTaskAcceptedNotification(context);
+    });
+  }
+
+  void _showTaskAcceptedNotification(BuildContext context) {
+    Flushbar(
+      message: "Puna u pranua nga profesionisti",
+      duration: const Duration(seconds: 2),
+      backgroundColor: AppColors.tomatoRed,
+      flushbarPosition: FlushbarPosition.BOTTOM,
+      positionOffset: 30.0, // Set an offset from the top, adjust as needed
+      icon: const Icon(
+        Icons.check_circle,
+        color: AppColors.white,
+      ),
+    ).show(context).then((_) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const TaskerMapScreen()),
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
           children: [
+            SizedBox(height: 30.h),
             Container(
               width: double.infinity,
               padding: EdgeInsets.all(16.w),
@@ -101,7 +131,7 @@ class WaitingScreenState extends State<WaitingScreen> {
                 // Optionally, navigate to another screen or show a message
               },
             ),
-            SizedBox(height: 40.h),
+            SizedBox(height: 20.h),
             ExpandableFabRectangular(
                 onReschedule: () {
                   // Handle reschedule logic

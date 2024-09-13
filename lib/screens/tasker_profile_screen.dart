@@ -1,9 +1,14 @@
+import 'dart:ui';
+
 import 'package:fit_pro_client/models/tasker.dart';
+import 'package:fit_pro_client/providers/taskers_provider.dart';
 import 'package:fit_pro_client/screens/waiting_screen.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:fit_pro_client/widgets/video_player_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:provider/provider.dart';
 
 class TaskerProfileScreen extends StatefulWidget {
   final Tasker tasker;
@@ -15,14 +20,76 @@ class TaskerProfileScreen extends StatefulWidget {
 }
 
 class _TaskerProfileScreenState extends State<TaskerProfileScreen> {
+
+  Future<void> _fetchTasker(BuildContext context, dynamic tasker) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Stack(
+        children: [
+          BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+            child: Container(
+              color: AppColors.white.withOpacity(0.8),
+            ),
+          ),
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(16.w),
+                  child: Text(
+                    'Profesionisti tjetër me afër '
+                    'jush është ...', 
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      color: AppColors.tomatoRed,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20.h),
+                SpinKitFadingCircle(
+                  color: AppColors.tomatoRed,
+                  size: 80.w,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    await Future.delayed(const Duration(seconds: 3));
+
+    if (!mounted) return;
+
+    Navigator.of(context).pop();
+
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TaskerProfileScreen(tasker: tasker),
+        ),
+      );
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
+    final taskersProvider = Provider.of<TaskersProvider>(context, listen: false);
+    var tasker = taskersProvider.taskers.first;
+    
     return Scaffold(
       body: Stack(
         children: [
           SingleChildScrollView(
             child: Column(
               children: [
+                SizedBox(height: 30.h),
                 _buildProfileSection(),
                 _buildPresentationProfileSection(),
                 _buildTasksSection(),
@@ -38,7 +105,7 @@ class _TaskerProfileScreenState extends State<TaskerProfileScreen> {
             left: 0,
             right: 0,
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              padding: EdgeInsets.only(left: 16.w, right: 16.w, bottom: 16.h),
               color: AppColors.white.withOpacity(0.9),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -71,7 +138,7 @@ class _TaskerProfileScreenState extends State<TaskerProfileScreen> {
                   SizedBox(height: 16.h),
                   ElevatedButton.icon(
                     onPressed: () {
-                      // Handle button press
+                      _fetchTasker(context, tasker);
                     },
                     icon: const Icon(Icons.close, color: AppColors.black),
                     label: Text(
@@ -100,8 +167,7 @@ class _TaskerProfileScreenState extends State<TaskerProfileScreen> {
 
   Widget _buildProfileSection() {
     return Container(
-      color: Colors.white,
-      padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 16.w),
+      color: AppColors.white,
       child: Column(
         children: [
           Container(
@@ -129,80 +195,85 @@ class _TaskerProfileScreenState extends State<TaskerProfileScreen> {
               ],
             ),
           ),
-          SizedBox(height: 20.h),
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 40,
-                backgroundImage: AssetImage(widget.tasker.profileImage),
-              ),
-              SizedBox(width: 16.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.tasker.fullName,
-                      style: TextStyle(
-                        fontSize: 22.sp,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.black,
+          SizedBox(height: 10.h),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            child: Row(
+              children: [
+                const CircleAvatar(
+                  radius: 40,
+                  backgroundImage: AssetImage('assets/images/client3.png'),
+                ),
+                SizedBox(width: 16.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.tasker.fullName,
+                        style: TextStyle(
+                          fontSize: 22.sp,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.black,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 8.h),
-                    Text(
-                      'Profesionist me përvoja në fusha të ndryshme',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: AppColors.grey700,
+                      SizedBox(height: 8.h),
+                      Text(
+                        'Profesionist me përvoja në fusha të ndryshme',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: AppColors.grey700,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 12.h),
-                    Row(
-                      children: [
-                        Icon(Icons.verified, size: 20.w, color: AppColors.grey700),
-                        SizedBox(width: 8.w),
-                        Expanded(
-                          child: Text(
-                            'Të gjitha shërbimet janë të garantuara',
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.black,
+                      SizedBox(height: 12.h),
+                      Row(
+                        children: [
+                          Icon(Icons.verified, size: 20.w, color: AppColors.grey700),
+                          SizedBox(width: 8.w),
+                          Expanded(
+                            child: Text(
+                              'Të gjitha shërbimet janë të garantuara',
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.black,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      'Ju mund të kërkoni një shërbim tjetër ose rimbursim',
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: AppColors.grey700,
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 16.h),
-          Row(
-            children: [
-              Icon(Icons.build, size: 20.w, color: AppColors.grey700),
-              SizedBox(width: 8.w),
-              Expanded(
-                child: Text(
-                  'Ofron shërbime të riparimit në shtëpi',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.black,
+                      SizedBox(height: 4.h),
+                      Text(
+                        'Ju mund të kërkoni një shërbim tjetër ose rimbursim',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: AppColors.grey700,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 16.w),
+            child: Row(
+              children: [
+                Icon(Icons.build, size: 20.w, color: AppColors.grey700),
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: Text(
+                    'Ofron shërbime të riparimit në shtëpi',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.black,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

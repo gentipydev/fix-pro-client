@@ -1,7 +1,7 @@
-import 'package:fit_pro_client/models/tasker.dart';
-import 'package:fit_pro_client/providers/taskers_provider.dart';
-import 'package:fit_pro_client/screens/tasker_profile_screen.dart';
+import 'dart:async';
+import 'package:fit_pro_client/providers/map_provider.dart';
 import 'package:fit_pro_client/utils/constants.dart';
+import 'package:fit_pro_client/widgets/custom_expandable_fab.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -20,57 +20,30 @@ class TaskerMapScreenState extends State<TaskerMapScreen> {
   Logger logger = Logger();
   GoogleMapController? mapController;
   Set<Marker> markers = {};
-  String? mapStyle;
+  Timer? _timer;
+  int _currentPolylineIndex = 0;
+  LatLng _taskerPosition = const LatLng(41.333688, 19.846087); // Initial position
+  bool isMoving = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      mapStyle = await DefaultAssetBundle.of(context).loadString('assets/map_style.json');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final mapProvider = Provider.of<MapProvider>(context, listen: false);
+      mapProvider.createRoute();
+      _startTaskerMovement(mapProvider.polylines.first.points); // Start tasker movement
     });
   }
 
-  void _onMapCreated(GoogleMapController controller) async {
-    mapController = controller;
-
-    final taskersProvider = Provider.of<TaskersProvider>(context, listen: false);
-    
-    for (final tasker in taskersProvider.taskers) {
-      final customMarker = await taskersProvider.getAssetImageDescriptor(tasker.mapProfileImage);
-      setState(() {
-        markers.add(
-          Marker(
-            markerId: MarkerId(tasker.fullName),
-            position: tasker.location,
-            icon: customMarker,
-            onTap: () {
-              _showTaskerInfoBottomSheet(tasker);
-            },
-            infoWindow: InfoWindow.noText,
-            flat: true,
-          ),
-        );
-      });
-    }
-
-    // Add a hardcoded user location marker in Tirana
-    const LatLng userLocation = LatLng(41.3275, 19.899);
-    final userLocationMarker = Marker(
-      markerId: const MarkerId('user_location'),
-      position: userLocation,
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-      flat: true,
-    );
-
-    setState(() {
-      markers.add(userLocationMarker);
-    });
+  @override
+  void dispose() {
+    _timer?.cancel(); // Cancel the timer when screen is disposed
+    super.dispose();
   }
 
-
-  Future<void> _navigateToLocation(Tasker tasker) async {
+    Future<void> _navigateToLocation() async {
     final Uri url = Uri.parse(
-        'https://www.google.com/maps/dir/?api=1&destination=${tasker.location.latitude},${tasker.location.longitude}&travelmode=driving');
+        'https://www.google.com/maps/dir/?api=1&destination=41.332918,19.854820&travelmode=driving');
     if (await canLaunchUrl(url)) {
       await launchUrl(url);
     } else {
@@ -78,182 +51,118 @@ class TaskerMapScreenState extends State<TaskerMapScreen> {
     }
   }
 
-  void _showTaskerInfoBottomSheet(Tasker tasker) {
+
+  // Function to simulate tasker movement along the polyline
+  void _startTaskerMovement(List<LatLng> polylinePoints) {
+    if (isMoving) return; // Prevent multiple movements at the same time
+    isMoving = true;
+
+    _timer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
+      if (_currentPolylineIndex < polylinePoints.length - 1) {
+        setState(() {
+          // Move to the next point in the polyline
+          _currentPolylineIndex++;
+          _taskerPosition = polylinePoints[_currentPolylineIndex];
+
+          // Update the polyline by removing the traveled part
+          final mapProvider = Provider.of<MapProvider>(context, listen: false);
+          mapProvider.updatePolyline(polylinePoints.sublist(_currentPolylineIndex));
+
+          // Update the tasker marker
+          _updateTaskerMarker();
+        });
+      } else {
+        // Tasker has reached the final point, show the BottomSheet
+        timer.cancel();
+        isMoving = false;
+        _showArrivalConfirmation(context);
+      }
+    });
+  }
+
+  // Function to update the tasker marker position
+  void _updateTaskerMarker() {
+    setState(() {
+      markers = {
+        Marker(
+          markerId: const MarkerId('taskerLocation'),
+          position: _taskerPosition,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        ),
+        Marker(
+          markerId: const MarkerId('userLocation'),
+          position: const LatLng(41.332918, 19.854820),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+        ),
+      };
+    });
+  }
+
+  // Function to show BottomSheet when tasker reaches the destination
+  void _showArrivalConfirmation(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20.r),
-              topRight: Radius.circular(20.r),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 10.r,
-                offset: const Offset(0, -2),
-              ),
-            ],
-          ),
-          padding: EdgeInsets.all(16.w),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+      ),
+      builder: (BuildContext context) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Container(
-                  width: 50.w,
-                  height: 5.h,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(10.r),
-                  ),
+              Text(
+                "A erdhi profesionisti në vendodhjen tuaj?",
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.grey700,
                 ),
+                textAlign: TextAlign.center,
               ),
               SizedBox(height: 20.h),
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  CircleAvatar(
-                    backgroundImage: AssetImage(tasker.profileImage),
-                    radius: 35.r,
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Dismiss the bottom sheet
+                      // Handle "Po, erdhi" action here
+                      logger.i("Profesionisti ka arritur");
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.tomatoRed,
+                      padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 20.w),
+                    ),
+                    child: Text(
+                      'Po, erdhi',
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
-                  SizedBox(width: 15.w),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              tasker.fullName,
-                              style: TextStyle(
-                                fontSize: 20.sp,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.grey700,
-                              ),
-                            ),
-                            Text(
-                              '2000 Lek/Ore',
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.grey700,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 5.h),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.star,
-                              color: AppColors.tomatoRed,
-                              size: 16.sp,
-                            ),
-                            SizedBox(width: 4.w),
-                            Text(
-                              '${tasker.rating} (227 vleresime)',
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 10.h),
-                        RichText(
-                          text: TextSpan(
-                            children: [
-                              TextSpan(
-                                text: '223 montime mobiliesh ',
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  color: AppColors.tomatoRed,
-                                ),
-                              ),
-                              TextSpan(
-                                text: 'te perfunduara',
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  color: AppColors.grey700,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 5.h),
-                        Text(
-                          '447 pune ne total',
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            color: AppColors.grey700
-                          ),
-                        ),
-                      ],
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Dismiss the bottom sheet
+                      // Handle "Jo, nuk erdhi" action here
+                      logger.i("Profesionisti nuk ka arritur");
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey,
+                      padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 20.w),
+                    ),
+                    child: Text(
+                      'Jo, nuk erdhi',
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ],
               ),
               SizedBox(height: 20.h),
-              Text(
-                tasker.bio,
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  color: Colors.grey[600],
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-              SizedBox(height: 10.h),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => TaskerProfileScreen(tasker: tasker),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: AppColors.tomatoRed,
-                        ),
-                        icon: const Icon(Icons.person),
-                        label: Text(
-                          'Shiko profilin',
-                          style: TextStyle(
-                            color: AppColors.white,
-                            fontSize: 14.sp,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _navigateToLocation(tasker);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: AppColors.tomatoRed,
-                    ),
-                    child: const Icon(Icons.directions), 
-                  ),
-                ]
-              ),
             ],
           ),
         );
@@ -261,45 +170,228 @@ class TaskerMapScreenState extends State<TaskerMapScreen> {
     );
   }
 
-  
   @override
   Widget build(BuildContext context) {
-    final taskersProvider = Provider.of<TaskersProvider>(context);
-    final taskers = taskersProvider.taskers;
-
-    // Find central LatLng point
-    final double averageLat = taskers.map((t) => t.location.latitude).reduce((a, b) => a + b) / taskers.length;
-    final double averageLng = taskers.map((t) => t.location.longitude).reduce((a, b) => a + b) / taskers.length;
-    final LatLng centralLocation = LatLng(averageLat, averageLng);
-
     return Scaffold(
-        appBar: AppBar(
-        backgroundColor: AppColors.tomatoRed,
-        iconTheme: const IconThemeData(
-          color: AppColors.white,
-        ),
-        title: const Text(
-          'Zgjidh një punëtor',
-          style: TextStyle(
-            color: AppColors.white,
-            fontSize: 18
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: Stack(
-        children: [
-          GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: centralLocation,
-              zoom: 11.5,
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: 30.h),
+            Container(
+              color: AppColors.tomatoRedLight,
+              width: double.infinity,
+              padding: EdgeInsets.all(16.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Puna juaj është pranuar ',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 30.h),
+                  Text(
+                    'Ndërkohë ju mund te kontaktoni profesionistin dhe të monitoroni vendodhjen e tij në kohë reale...',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14.sp,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            style: mapStyle,
-            onMapCreated: _onMapCreated,
-            markers: markers,
-            zoomControlsEnabled: false,
-          ),
-        ]
+            Stack(
+              children: [
+                SizedBox(
+                  height: 360.h,
+                  child: Consumer<MapProvider>(
+                    builder: (context, mapProvider, child) {
+                      return GoogleMap(
+                        initialCameraPosition: const CameraPosition(
+                          target: LatLng(41.333556, 19.849746),
+                          zoom: 15.5,
+                        ),
+                        onMapCreated: (GoogleMapController controller) {
+                          mapProvider.loadMapStyle(context);
+                        },
+                        style: mapProvider.mapStyle,
+                        polylines: mapProvider.polylines,
+                        markers: markers.isNotEmpty
+                            ? markers
+                            : {
+                                Marker(
+                                  markerId: const MarkerId('taskerLocation'),
+                                  position: _taskerPosition,
+                                  icon: BitmapDescriptor.defaultMarkerWithHue(
+                                      BitmapDescriptor.hueAzure),
+                                ),
+                                Marker(
+                                  markerId: const MarkerId('userLocation'),
+                                  position:
+                                      const LatLng(41.332918, 19.854820),
+                                  icon: BitmapDescriptor.defaultMarkerWithHue(
+                                      BitmapDescriptor.hueRed),
+                                ),
+                              },
+                        zoomControlsEnabled: false,
+                      );
+                    },
+                  ),
+                ),
+                Positioned(
+                  bottom: 1.h,
+                  left: 70.w,
+                  child: Row(
+                    children: [
+                      ElevatedButton(
+                        onPressed: _navigateToLocation,
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: AppColors.tomatoRed,
+                          backgroundColor: AppColors.white,
+                          padding: EdgeInsets.all(4.w),
+                          minimumSize: Size(30.w, 30.h),
+                          shape: const CircleBorder(),
+                        ),
+                        child: Icon(
+                          Icons.directions,
+                          color: AppColors.tomatoRed,
+                          size: 25.w,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.only(left: 16.w, top: 16.h),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.location_on, color: AppColors.grey700),
+                            SizedBox(width: 8.w),
+                            Text(
+                              'Rrethrrotullimi i Farkës, Tiranë',
+                              style: TextStyle(fontSize: 16.sp),
+                            ),
+                          ],
+                        )
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.w),
+                    child: Text(
+                      'Rreth 0.7 km larg',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                  Container(
+                    color: AppColors.grey100,
+                    padding: EdgeInsets.all(16.w),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Stack(
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Column(
+                                  children: [
+                                    Container(
+                                      width: 80.w,
+                                      height: 80.h,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: AppColors.grey300,
+                                          width: 3.0,
+                                        ),
+                                      ),
+                                      child: CircleAvatar(
+                                        radius: 36.sp,
+                                        backgroundImage: const AssetImage('assets/images/client3.png'),
+                                      ),
+                                    ),
+                                    SizedBox(height: 10.h),
+                                    Text(
+                                      'Arben Gashi',
+                                      style: TextStyle(
+                                        fontSize: 16.sp,
+                                        color: AppColors.grey700,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    SizedBox(height: 12.h),
+                                  ],
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Montim Mobiliesh",
+                                      style: TextStyle(
+                                        fontSize: 14.sp,
+                                        color: AppColors.grey700,
+                                      ),
+                                    ),
+                                    SizedBox(height: 10.h),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          '2000 Lek',
+                                          style: TextStyle(
+                                            fontSize: 12.sp,
+                                            color: AppColors.tomatoRed,
+                                          ),
+                                        ),
+                                        Text(
+                                          '/orë pune',
+                                          style: TextStyle(
+                                            fontSize: 14.sp,
+                                            color: AppColors.grey700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Positioned(
+                              top: 2.w,
+                              right: 2.w,
+                              child: Icon(
+                                Icons.military_tech,
+                                color: AppColors.tomatoRed,
+                                size: 28.sp,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const ExpandableFab(phoneNumber: '+355696443833'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
       ),
     );
   }

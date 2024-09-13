@@ -56,9 +56,9 @@ class ExpandableFabRectangularState extends State<ExpandableFabRectangular> with
                 width: 150.w,
                 height: 50.h,
                 content: Text(
-                  "Riplanifiko",
+                  "Kërko dikë tjetër",
                   style: TextStyle(
-                    fontSize: 18.sp,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
                     color: AppColors.tomatoRed,
                   ),
@@ -76,10 +76,10 @@ class ExpandableFabRectangularState extends State<ExpandableFabRectangular> with
                 width: 150.w,
                 height: 50.h,
                 content: Text(
-                  "Puna u Krye",
+                  "Kontaktoje",
                   style: TextStyle(
                     color: AppColors.white,
-                    fontSize: 18.sp,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -96,9 +96,9 @@ class ExpandableFabRectangularState extends State<ExpandableFabRectangular> with
                 width: 150.w,
                 height: 50.h,
                 content: Text(
-                  "Anullo",
+                  "Anullo punën",
                   style: TextStyle(
-                    fontSize: 18.sp,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
                     color: AppColors.tomatoRed,
                   ),

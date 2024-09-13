@@ -1,7 +1,6 @@
 import 'package:fit_pro_client/providers/auth_provider.dart';
 import 'package:fit_pro_client/providers/taskers_provider.dart';
 import 'package:fit_pro_client/screens/home_screen.dart';
-import 'package:fit_pro_client/screens/tasker_map_screen.dart';
 import 'package:fit_pro_client/services/auth_check_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -11,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:syncfusion_localizations/syncfusion_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:fit_pro_client/providers/map_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +21,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => MapProvider()),
         ChangeNotifierProvider(create: (_) => TaskersProvider()),
       ],
       child: const MyApp(),
@@ -61,7 +62,6 @@ class MyApp extends StatelessWidget {
           routes: {
             '/auth-check': (context) => const AuthCheckService(),
             '/home': (context) => const HomeScreen(),
-            '/tasker-map': (context) => const TaskerMapScreen(),
           },
         );
       },
