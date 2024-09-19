@@ -39,6 +39,7 @@ dependencies:
   shimmer: ^3.0.0
   timer_count_down: ^2.2.2
   another_flushbar: ^1.12.30
+  intl_phone_number_input: ^0.7.4
   
 dev_dependencies:
   flutter_test:
@@ -56,6 +57,7 @@ flutter:
     - assets/map_style.json
     - assets/videos/sample_video.mp4
     - assets/animations/circular_dot_animation.json
+    - assets/animations/touch_app.json
 
 
 flutter_icons:

@@ -13,6 +13,7 @@ class TaskersProvider extends ChangeNotifier {
     _loadFakeTaskers();
   }
 
+  // Function to load fake taskers
   void _loadFakeTaskers() {
     _taskers = [
       Tasker(
@@ -24,7 +25,8 @@ class TaskersProvider extends ChangeNotifier {
         phoneNumber: '+355671234567',
         email: 'arbengashi@example.com',
         skills: ['Shtrim pllakash', 'Punime elektrike'],
-        bio: 'Punëtor me përvojë me mbi 10 vjet në zanatin e tij',
+        bio: 'Punëtor me përvojë me mbi 10 vjet në zanatin e tij...',
+        isSuperPunetor: true,
       ),
       Tasker(
         fullName: 'Eriona Hoxha',
@@ -35,7 +37,7 @@ class TaskersProvider extends ChangeNotifier {
         phoneNumber: '+355682345678',
         email: 'erionahoxha@example.com',
         skills: ['Lyerje', 'Punime druri'],
-        bio: 'Eksperte në përmirësimin dhe dekorimin e shtëpisë',
+        bio: 'Eksperte në përmirësimin dhe dekorimin e shtëpisë...',
       ),
       Tasker(
         fullName: 'Blerim Krasniqi',
@@ -46,7 +48,7 @@ class TaskersProvider extends ChangeNotifier {
         phoneNumber: '+355691234567',
         email: 'blerimkrasniqi@example.com',
         skills: ['Kopshtari'],
-        bio: 'Specialist për kujdesin ndaj kopshtit',
+        bio: 'Specialist për kujdesin ndaj kopshtit...',
       ),
       Tasker(
         fullName: 'Lule Bajraktari',
@@ -57,7 +59,8 @@ class TaskersProvider extends ChangeNotifier {
         phoneNumber: '+355692345678',
         email: 'lulebajraktari@example.com',
         skills: ['Pastrim', 'Organizimi i hapësirave'],
-        bio: 'Eksperte në pastrimin dhe organizimin e hapësirave të banimit',
+        bio: 'Eksperte në pastrimin dhe organizimin e hapësirave të banimit...',
+        isSuperPunetor: true
       ),
       Tasker(
         fullName: 'Artan Rexhepi',
@@ -68,7 +71,7 @@ class TaskersProvider extends ChangeNotifier {
         phoneNumber: '+355672345679',
         email: 'artanrexhepi@example.com',
         skills: ['Lyerje', 'Instalime hidraulike'],
-        bio: 'Ndërtues me përvojë të gjatë në lyerje dhe instalime hidraulike',
+        bio: 'Ndërtues me përvojë të gjatë në lyerje dhe instalime hidraulike...',
       ),
     ];
 
@@ -78,6 +81,13 @@ class TaskersProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Function to remove a tasker
+  void removeTasker(Tasker tasker) {
+    _taskers.remove(tasker);
+    notifyListeners(); // Notify listeners to update the UI
+  }
+
+  // Calculate the central location based on the average location of all taskers
   void _calculateCentralLocation() {
     if (_taskers.isEmpty) {
       _centralLocation = const LatLng(41.3275, 19.8189);
@@ -88,6 +98,7 @@ class TaskersProvider extends ChangeNotifier {
     }
   }
 
+  // Function to get asset image descriptor for a map marker
   Future<BitmapDescriptor> getAssetImageDescriptor(String assetPath) async {
     return await BitmapDescriptor.asset(
       const ImageConfiguration(size: Size(90, 90)),

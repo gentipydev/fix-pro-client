@@ -10,6 +10,7 @@ class Tasker {
   final String email;
   final List<String> skills;
   final String bio;
+  final bool isSuperPunetor; 
 
   Tasker({
     required this.fullName,
@@ -21,11 +22,12 @@ class Tasker {
     this.email = '',
     this.skills = const [],
     this.bio = '',
+    this.isSuperPunetor = false,
   });
 
   // Method to display a summary of the Tasker
   String get summary {
-    return 'Tasker: $fullName, Rating: $rating, Location: (${location.latitude}, ${location.longitude})';
+    return 'Tasker: $fullName, Rating: $rating, Location: (${location.latitude}, ${location.longitude}), Super Punëtor: $isSuperPunetor';
   }
 
   // Factory method to create a Tasker from a JSON object
@@ -40,6 +42,7 @@ class Tasker {
       email: json['email'] ?? '',
       skills: List<String>.from(json['skills'] ?? []),
       bio: json['bio'] ?? '',
+      isSuperPunetor: json['is_super_punetor'] ?? false, 
     );
   }
 
@@ -58,6 +61,7 @@ class Tasker {
       'email': email,
       'skills': skills,
       'bio': bio,
+      'is_super_punetor': isSuperPunetor,
     };
   }
 }

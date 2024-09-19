@@ -1,6 +1,5 @@
 import 'package:fit_pro_client/screens/tasker_map_screen.dart';
 import 'package:fit_pro_client/utils/constants.dart';
-import 'package:fit_pro_client/widgets/custom_rectangular_fab.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:logger/logger.dart';
@@ -33,7 +32,6 @@ class WaitingScreenState extends State<WaitingScreen> {
       duration: const Duration(seconds: 2),
       backgroundColor: AppColors.tomatoRed,
       flushbarPosition: FlushbarPosition.BOTTOM,
-      positionOffset: 30.0, // Set an offset from the top, adjust as needed
       icon: const Icon(
         Icons.check_circle,
         color: AppColors.white,
@@ -93,7 +91,7 @@ class WaitingScreenState extends State<WaitingScreen> {
                 ],
               ),
             ),
-            SizedBox(height: 20.h),
+            SizedBox(height: 40.h),
             Countdown(
               seconds: countdownDuration,
               build: (_, double time) {
@@ -105,8 +103,8 @@ class WaitingScreenState extends State<WaitingScreen> {
                   children: [
                     ClipOval(
                       child: SizedBox(
-                        height: 240.w,
-                        width: 240.w,
+                        height: 300.w,
+                        width: 300.w,
                         child: Lottie.asset(
                             'assets/animations/circular_dot_animation.json',
                             repeat: true,
@@ -131,22 +129,6 @@ class WaitingScreenState extends State<WaitingScreen> {
                 // Optionally, navigate to another screen or show a message
               },
             ),
-            SizedBox(height: 20.h),
-            ExpandableFabRectangular(
-                onReschedule: () {
-                  // Handle reschedule logic
-                  logger.d("Reschedule clicked");
-                },
-                onCancel: () {
-                  // Handle cancel logic
-                  logger.d("Cancel clicked");
-                },
-                onComplete: () {
-                  // Handle complete logic
-                  logger.d("Complete clicked");
-                },
-              ),
-              SizedBox(height: 40.h)
           ],
         ),
     );

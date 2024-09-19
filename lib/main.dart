@@ -1,7 +1,12 @@
 import 'package:fit_pro_client/providers/auth_provider.dart';
+import 'package:fit_pro_client/providers/login_validation_provider.dart';
 import 'package:fit_pro_client/providers/taskers_provider.dart';
+import 'package:fit_pro_client/providers/tasks_provider.dart';
 import 'package:fit_pro_client/screens/home_screen.dart';
+import 'package:fit_pro_client/screens/login_screen.dart';
+import 'package:fit_pro_client/screens/register_screen.dart';
 import 'package:fit_pro_client/services/auth_check_service.dart';
+import 'package:fit_pro_client/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -21,8 +26,11 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => Validators()),
+        ChangeNotifierProvider(create: (_) => LoginValidationProvider()),
         ChangeNotifierProvider(create: (_) => MapProvider()),
         ChangeNotifierProvider(create: (_) => TaskersProvider()),
+        ChangeNotifierProvider(create: (_) => TasksProvider()),
       ],
       child: const MyApp(),
     ),
@@ -58,9 +66,11 @@ class MyApp extends StatelessWidget {
             Locale('sq'),
           ],
           locale: const Locale('sq'),
-          initialRoute: '/home',
+          initialRoute: '/auth-check',
           routes: {
             '/auth-check': (context) => const AuthCheckService(),
+            '/login': (context) => const LoginScreen(),
+            '/register': (context) => const RegisterScreen(),
             '/home': (context) => const HomeScreen(),
           },
         );

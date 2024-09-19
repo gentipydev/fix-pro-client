@@ -1,4 +1,7 @@
 import 'dart:ui';
+import 'package:fit_pro_client/screens/favourite_taskers_screen.dart';
+import 'package:fit_pro_client/screens/search_screen.dart';
+import 'package:fit_pro_client/screens/tasks_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fit_pro_client/providers/taskers_provider.dart';
 import 'package:fit_pro_client/screens/tasker_profile_screen.dart';
@@ -21,8 +24,8 @@ class HomeScreenState extends State<HomeScreen> {
 
   final List<Widget> _pages = [
     const HomeContent(),
-    const HomeContent(),
-    const HomeContent(),
+    const TasksScreen(),
+    const FavouriteTaskersScreen(),
     const HomeContent(),
   ];
 
@@ -411,7 +414,10 @@ final List<Map<String, String>> categories = [
         final category = categories[index];
         return GestureDetector(
           onTap: () {
-            _fetchTasker(context, tasker);
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SearchScreen()),
+            );
           },
           child: Column(
             children: [

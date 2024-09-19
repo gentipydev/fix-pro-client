@@ -9,6 +9,19 @@ class Validators extends ChangeNotifier {
     return null;
   }
 
+  String? emailValidator(String? value, BuildContext context) {
+    final RegExp emailRegex = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
+
+    if (value == null || value.isEmpty) {
+      return 'Ju lutemi vendosni email-in';
+    } else if (!emailRegex.hasMatch(value)) {
+      return 'Ju lutem vendoni nje email te sakte';
+    }
+    return null;
+  }
+
   String? simplePasswordValidator(String? value, BuildContext context) {
     if (value == null || value.isEmpty) {
       return 'Ju lutemi vendosni password-in';

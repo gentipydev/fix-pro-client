@@ -1,5 +1,4 @@
 import 'dart:ui';
-
 import 'package:fit_pro_client/models/tasker.dart';
 import 'package:fit_pro_client/providers/taskers_provider.dart';
 import 'package:fit_pro_client/screens/waiting_screen.dart';
@@ -37,19 +36,6 @@ class _TaskerProfileScreenState extends State<TaskerProfileScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Padding(
-                  padding: EdgeInsets.all(16.w),
-                  child: Text(
-                    'Profesionisti tjetër me afër '
-                    'jush është ...', 
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      color: AppColors.tomatoRed,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 20.h),
                 SpinKitFadingCircle(
                   color: AppColors.tomatoRed,
                   size: 80.w,
@@ -313,7 +299,7 @@ class _TaskerProfileScreenState extends State<TaskerProfileScreen> {
                           barrierColor: Colors.black.withOpacity(0.7),
                           builder: (context) => const VideoPlayerWidget(videoUrl: 'assets/videos/sample_video.mp4'),
                         );
-                      }
+                      },
                     ),
                   ),
                 ),
@@ -327,9 +313,22 @@ class _TaskerProfileScreenState extends State<TaskerProfileScreen> {
               _buildProfileDetail(Icons.star, '4.9', '48 vlerësime'),
               _buildProfileDetail(Icons.handyman, '350', 'punë të kryera'),
               _buildProfileDetail(null, '2.000 Lek', 'për orë pune'),
-            ]
+            ],
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: 30.h),
+          Center(
+            child: TextButton(
+              onPressed: () {
+                // Handle adding to favorites
+              },
+              child: const Text(
+                'Shto tek të preferuarit',
+                style: TextStyle(
+                  color: AppColors.grey700,
+                ),
+              ),
+            ),
+          )
         ],
       ),
     );
