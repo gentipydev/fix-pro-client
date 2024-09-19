@@ -23,7 +23,7 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
 
   bool terms = false;
-  bool _isSubmitting = false;
+  bool isSubmitting = false;
 
   final cityController = TextEditingController();
   final confirmPasswordController = TextEditingController();
@@ -284,33 +284,67 @@ final GlobalKey<InternationalPhoneInputState> internationalPhoneInputKey = Globa
                                 ),
                                 SizedBox(height: 20.h),
                                 GestureDetector(
-                                  onTap: () {
-                                    if (_isSubmitting) {
-                                      return; 
-                                    }
+                                  onTap: () async {
+                                    // Prevent multiple submissions
+                                    if (isSubmitting) return;
 
-                                    setState(() {
-                                      _isSubmitting = true;
-                                    });
-
+                                    // Run form validation
                                     isFormSubmitted.value = true;
                                     String? firstNameError = validators.firstNameValidator(firstNameController.text, context);
                                     String? lastNameError = validators.lastNameValidator(lastNameController.text, context);
                                     String? emailError = validators.emailValidator(emailController.text, context);
                                     String? passwordError = validators.registerPasswordValidator(passwordController.text, context);
                                     String? cityError = validators.cityValidator(cityController.text, context);
-                                    String? birthDateError = validators.dateValidator(yearOfBirthController.text, monthOfBirthController.text, dayOfBirthController.text, context, true);
-    
+                                    String? birthDateError = validators.dateValidator(
+                                      yearOfBirthController.text,
+                                      monthOfBirthController.text,
+                                      dayOfBirthController.text,
+                                      context,
+                                      true,
+                                    );
+
                                     if (phoneNumberController.text.isEmpty) {
-                                    phoneNumberError.value = "Numri nuk eshte is sakte";
+                                      phoneNumberError.value = "Numri nuk eshte i sakte";
                                     }
-    
+
+                                    // Update the validation error state
                                     this.firstNameError.value = firstNameError;
                                     this.lastNameError.value = lastNameError;
                                     this.emailError.value = emailError;
                                     this.passwordError.value = passwordError;
                                     this.cityError.value = cityError;
                                     this.birthDateError.value = birthDateError;
+
+                                    // Check if all validation errors are null
+                                    if (firstNameError == null &&
+                                        lastNameError == null &&
+                                        emailError == null &&
+                                        passwordError == null &&
+                                        cityError == null &&
+                                        birthDateError == null &&
+                                        phoneNumberController.text.isNotEmpty) {
+                                      
+                                      // Start loading spinner and simulate network request
+                                      setState(() {
+                                        isSubmitting = true; // Show loading indicator
+                                      });
+
+                                      // Simulate network request with a 1-second delay
+                                      await Future.delayed(const Duration(seconds: 1));
+
+                                      // Stop loading spinner and navigate to HomeScreen
+                                      setState(() {
+                                        isSubmitting = false; // Hide loading indicator
+                                      });
+
+                                      Navigator.pushNamed(context, '/home');
+                                    } else {
+                                      if (mounted) {
+                                        setState(() {
+                                          // You can handle displaying specific error logic here
+                                        });
+                                      }
+                                    }
                                   },
                                   child: Container(
                                     margin: EdgeInsets.fromLTRB(38.w, 0, 38.w, 0),
@@ -321,29 +355,32 @@ final GlobalKey<InternationalPhoneInputState> internationalPhoneInputKey = Globa
                                         Container(
                                           decoration: BoxDecoration(
                                             color: AppColors.black,
-                                            borderRadius:
-                                                BorderRadius.circular(5.0),
-                                            boxShadow:  [
+                                            borderRadius: BorderRadius.circular(5.0),
+                                            boxShadow: [
                                               BoxShadow(
                                                 color: const Color(0x4df89500),
-                                                offset:  Offset(0, 10.w),
+                                                offset: Offset(0, 10.w),
                                                 blurRadius: 30.r,
                                               ),
                                             ],
                                           ),
                                         ),
                                         Center(
-                                          child: Text(
-                                            "Rregjistrohuni",
-                                            style: GoogleFonts.roboto(
-                                              fontSize: 18.sp,
-                                              color: AppColors.white,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                            textHeightBehavior: const TextHeightBehavior(applyHeightToFirstAscent:false),
-                                            textAlign: TextAlign.center,
-                                            softWrap: false,
-                                          ),
+                                          child: isSubmitting
+                                              ? const CircularProgressIndicator(
+                                                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
+                                                )
+                                              : Text(
+                                                  "Rregjistrohuni",
+                                                  style: GoogleFonts.roboto(
+                                                    fontSize: 18.sp,
+                                                    color: AppColors.white,
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                  textHeightBehavior: const TextHeightBehavior(applyHeightToFirstAscent: false),
+                                                  textAlign: TextAlign.center,
+                                                  softWrap: false,
+                                                ),
                                         ),
                                       ],
                                     ),

@@ -56,7 +56,7 @@ class FavouriteTaskersScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => TaskerProfileScreen(tasker: tasker),
+                        builder: (context) => const TaskerProfileScreen(),
                       ),
                     );
                   },

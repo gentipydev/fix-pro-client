@@ -4,7 +4,6 @@ import 'package:fit_pro_client/screens/search_screen.dart';
 import 'package:fit_pro_client/screens/tasks_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fit_pro_client/providers/taskers_provider.dart';
-import 'package:fit_pro_client/screens/tasker_profile_screen.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -202,7 +201,7 @@ final List<Map<String, String>> categories = [
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => TaskerProfileScreen(tasker: tasker),
+          builder: (context) => const SearchScreen(),
         ),
       );
     }
@@ -414,10 +413,7 @@ final List<Map<String, String>> categories = [
         final category = categories[index];
         return GestureDetector(
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const SearchScreen()),
-            );
+            _fetchTasker(context, tasker);
           },
           child: Column(
             children: [

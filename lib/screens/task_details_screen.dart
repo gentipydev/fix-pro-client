@@ -1,7 +1,5 @@
 import 'package:fit_pro_client/models/task.dart';
 import 'package:fit_pro_client/providers/map_provider.dart';
-import 'package:fit_pro_client/providers/tasks_provider.dart';
-import 'package:fit_pro_client/screens/tasks_screen.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:fit_pro_client/widgets/custom_expandable_fab.dart';
 import 'package:flutter/material.dart';
@@ -55,76 +53,6 @@ class TaskDetailsScreenState extends State<TaskDetailsScreen> {
     }
   }
 
-  void _showCancelDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppColors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15.0),
-          ),
-          title: Text(
-            'Jeni i sigurt që doni të hiqni dorë?',
-            style: TextStyle(
-              color: AppColors.grey700,
-              fontSize: 18.sp,
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              style: TextButton.styleFrom(
-                backgroundColor: AppColors.grey300,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-              ),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text(
-                'Jo',
-                style: TextStyle(
-                  color: AppColors.grey700,
-                  fontSize: 16.sp,
-                ),
-              ),
-            ),
-            TextButton(
-              style: TextButton.styleFrom(
-                backgroundColor: AppColors.tomatoRed,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-              ),
-              onPressed: () {
-                _cancelTask();
-              },
-              child: Text(
-                'Po, jam i sigurt',
-                style: TextStyle(
-                  color: AppColors.white,
-                  fontSize: 16.sp,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _cancelTask() {
-    final tasksProvider = Provider.of<TasksProvider>(context, listen: false);
-    tasksProvider.removeTask(widget.task.id);
-
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const TasksScreen()),
-      (Route<dynamic> route) => false,
-    );
-  }
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -155,8 +83,8 @@ class TaskDetailsScreenState extends State<TaskDetailsScreen> {
                       builder: (context, mapProvider, child) {
                         return GoogleMap(
                           initialCameraPosition: const CameraPosition(
-                            target: LatLng(41.326574, 19.8379),
-                            zoom: 13.5,
+                            target: LatLng(41.333556, 19.849746),
+                            zoom: 15.5,
                           ),
                           onMapCreated: (GoogleMapController controller) {
                             mapProvider.loadMapStyle(context);
@@ -413,136 +341,6 @@ class TaskDetailsScreenState extends State<TaskDetailsScreen> {
               ],
             ),
           ),
-          // Positioned widget for when task status is actual
-          if (widget.task.status == TaskStatus.actual)
-            Positioned(
-              bottom: 20.h,
-              left: 20.w,
-              right: 20.w,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton(
-                    onPressed: _showCancelDialog,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.grey300,
-                      minimumSize: Size(150.w, 50.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(5.r),
-                      ),
-                      shadowColor: AppColors.grey700,
-                      elevation: 5,
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 20.w, vertical: 10.h),
-                      textStyle: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.white,
-                      ),
-                    ),
-                    child: Text(
-                      'Hiq Dorë',
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.tomatoRed,
-                      ),
-                    ),
-                  ),
-                 ElevatedButton(
-                    onPressed: () {
-                      
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.tomatoRed,
-                      minimumSize: Size(150.w, 50.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(5.r),
-                      ),
-                      shadowColor: AppColors.grey700,
-                      elevation: 5,
-                      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-                      textStyle: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.white,
-                      ),
-                    ),
-                    child: const Text(
-                      'Merr Punën',
-                      style: TextStyle(
-                        color: AppColors.white,
-                      ),
-                    ),
-                  )
-                ],
-              ),
-            )
-          else if (widget.task.status == TaskStatus.accepted)
-            // Positioned widget for when task status is accepted
-            Positioned(
-              bottom: 20.h,
-              left: 20.w,
-              right: 20.w,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton(
-                    onPressed: _showCancelDialog,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.grey300,
-                      minimumSize: Size(150.w, 50.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(5.r),
-                      ),
-                      shadowColor: AppColors.grey700,
-                      elevation: 5,
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 20.w, vertical: 10.h),
-                      textStyle: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.white,
-                      ),
-                    ),
-                    child: Text(
-                      'Anullo',
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.tomatoRed,
-                      ),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                 
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.tomatoRed,
-                      minimumSize: Size(150.w, 50.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(5.r),
-                      ),
-                      shadowColor: AppColors.grey700,
-                      elevation: 5,
-                      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-                      textStyle: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.white,
-                      ),
-                    ),
-                    child: const Text(
-                      'Puna u Krye',
-                      style: TextStyle(
-                        color: AppColors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
         ],
       ),
     );

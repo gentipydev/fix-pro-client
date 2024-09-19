@@ -87,8 +87,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           SizedBox(height: 80.h),
                           Center(
                             child: Container(
-                              width: 140.w,
-                              height: 140.h,
+                              width: 120.w,
+                              height: 120.h,
                              decoration: BoxDecoration(
                                 color: AppColors.black.withOpacity(0.6),
                                 borderRadius: const BorderRadius.all(
@@ -105,8 +105,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                     alignment: Alignment.center,
                                     child: Image.asset(
                                       'assets/images/fix.png',
-                                      width: 130.w,
-                                      height: 130.h,
+                                      width: 100.w,
+                                      height: 100.h,
                                     ),
                                   ),
                                 ],
@@ -114,27 +114,30 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           SizedBox(height: 80.h),
-                          Form(
-                            key: _formKey,
-                            child: Column(
-                              children: [
-                                CustomSimpleTextField(
-                                  label: 'Email',
-                                  controller: emailController,
-                                  iconPath: 'assets/icons/email-icon.svg',
-                                  validator: (value) => validators.simpleEmailValidator(value, context),
-                                ),
-                                SizedBox(height: 30.h),
-                                CustomSimpleTextField(
-                                  label: 'Password',
-                                  controller: passwordController,
-                                  iconPath: 'assets/icons/password-icon.svg',
-                                  obscureText: true,
-                                  validator: (value) => validators.simplePasswordValidator(value, context),
-                                  showPassword: true,
-                                ),
-                                SizedBox(height: 30.h),
-                              ],
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16.w),
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                children: [
+                                  CustomSimpleTextField(
+                                    label: 'Email',
+                                    controller: emailController,
+                                    iconPath: 'assets/icons/email-icon.svg',
+                                    validator: (value) => validators.simpleEmailValidator(value, context),
+                                  ),
+                                  SizedBox(height: 30.h),
+                                  CustomSimpleTextField(
+                                    label: 'Password',
+                                    controller: passwordController,
+                                    iconPath: 'assets/icons/password-icon.svg',
+                                    obscureText: true,
+                                    validator: (value) => validators.simplePasswordValidator(value, context),
+                                    showPassword: true,
+                                  ),
+                                  SizedBox(height: 30.h),
+                                ],
+                              ),
                             ),
                           ),
                           GestureDetector(

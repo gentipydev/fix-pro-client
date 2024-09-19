@@ -1,18 +1,14 @@
 import 'dart:ui';
-import 'package:fit_pro_client/models/tasker.dart';
-import 'package:fit_pro_client/providers/taskers_provider.dart';
 import 'package:fit_pro_client/screens/waiting_screen.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:fit_pro_client/widgets/video_player_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:provider/provider.dart';
 
 class TaskerProfileScreen extends StatefulWidget {
-  final Tasker tasker;
 
-  const TaskerProfileScreen({super.key, required this.tasker});
+  const TaskerProfileScreen({super.key});
 
   @override
   State<TaskerProfileScreen> createState() => _TaskerProfileScreenState();
@@ -20,7 +16,7 @@ class TaskerProfileScreen extends StatefulWidget {
 
 class _TaskerProfileScreenState extends State<TaskerProfileScreen> {
 
-  Future<void> _fetchTasker(BuildContext context, dynamic tasker) async {
+  Future<void> _fetchTasker(BuildContext context) async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -57,7 +53,7 @@ class _TaskerProfileScreenState extends State<TaskerProfileScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => TaskerProfileScreen(tasker: tasker),
+          builder: (context) => TaskerProfileScreen(),
         ),
       );
     }
@@ -66,8 +62,6 @@ class _TaskerProfileScreenState extends State<TaskerProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final taskersProvider = Provider.of<TaskersProvider>(context, listen: false);
-    var tasker = taskersProvider.taskers.first;
     
     return Scaffold(
       body: Stack(
@@ -124,7 +118,7 @@ class _TaskerProfileScreenState extends State<TaskerProfileScreen> {
                   SizedBox(height: 16.h),
                   ElevatedButton.icon(
                     onPressed: () {
-                      _fetchTasker(context, tasker);
+                      _fetchTasker(context);
                     },
                     icon: const Icon(Icons.close, color: AppColors.black),
                     label: Text(
@@ -196,7 +190,7 @@ class _TaskerProfileScreenState extends State<TaskerProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.tasker.fullName,
+                        'Arben Gashi',
                         style: TextStyle(
                           fontSize: 22.sp,
                           fontWeight: FontWeight.bold,
