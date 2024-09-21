@@ -3,6 +3,7 @@ import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:lottie/lottie.dart';
 
 class ExpandableFab extends StatefulWidget {
   final String phoneNumber;
@@ -11,7 +12,7 @@ class ExpandableFab extends StatefulWidget {
   const ExpandableFab({
     super.key,
     required this.phoneNumber,
-    this.onAcceptTask, 
+    this.onAcceptTask,
   });
 
   @override
@@ -21,15 +22,12 @@ class ExpandableFab extends StatefulWidget {
 class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderStateMixin {
   late AnimationController animationController;
   late Animation rotationAnimation;
-  bool isAccepted = false; 
+  late Animation degOneTranslationAnimation, degTwoTranslationAnimation, degThreeTranslationAnimation;
+  bool isAccepted = false;
   bool isExpanded = false;
+  bool isLoading = false;
 
   final CommunicationService _communicationService = CommunicationService();
-
-  double getRadiansFromDegree(double degree) {
-    double unitRadian = 57.295779513;
-    return degree / unitRadian;
-  }
 
   @override
   void dispose() {
@@ -39,27 +37,59 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
 
   @override
   void initState() {
-    animationController = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
-    rotationAnimation = Tween<double>(begin: 0.0, end: 360.0).animate(CurvedAnimation(parent: animationController, curve: Curves.easeInOut));
+    animationController = AnimationController(vsync: this, duration: const Duration(milliseconds: 350));
+    degOneTranslationAnimation = TweenSequence([
+      TweenSequenceItem<double>(tween: Tween<double>(begin: 0.0, end: 1.2), weight: 75.0),
+      TweenSequenceItem<double>(tween: Tween<double>(begin: 1.2, end: 1.0), weight: 25.0),
+    ]).animate(animationController);
+    degTwoTranslationAnimation = TweenSequence([
+      TweenSequenceItem<double>(tween: Tween<double>(begin: 0.0, end: 1.4), weight: 55.0),
+      TweenSequenceItem<double>(tween: Tween<double>(begin: 1.4, end: 1.0), weight: 45.0),
+    ]).animate(animationController);
+    degThreeTranslationAnimation = TweenSequence([
+      TweenSequenceItem<double>(tween: Tween<double>(begin: 0.0, end: 1.75), weight: 35.0),
+      TweenSequenceItem<double>(tween: Tween<double>(begin: 1.75, end: 1.0), weight: 65.0),
+    ]).animate(animationController);
+    rotationAnimation = Tween<double>(begin: 0.0, end: 360.0).animate(CurvedAnimation(parent: animationController, curve: Curves.easeOut));
     super.initState();
     animationController.addListener(() {
       setState(() {});
     });
   }
 
+  // Handle the "Prano" button press
   void _onAcceptPressed() {
     setState(() {
-      isAccepted = true;
+      isLoading = true;
     });
-    animationController.forward();
 
-    widget.onAcceptTask!();
+    Future.delayed(const Duration(seconds: 2), () {
+      setState(() {
+        isAccepted = true; 
+        isLoading = false; 
+      });
+
+      widget.onAcceptTask!();
+    });
   }
 
+  // Handle expanding the FAB to show more actions
   void _onContactPressed() {
     setState(() {
-      isExpanded = !isExpanded; 
+      isExpanded = !isExpanded;
+
+      // If expanded, start the animation
+      if (isExpanded) {
+        animationController.forward();
+      } else {
+        animationController.reverse();
+      }
     });
+  }
+
+  double getRadiansFromDegree(double degree) {
+    const double unitRadian = 57.295779513;
+    return degree / unitRadian;
   }
 
   @override
@@ -83,10 +113,10 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
                     width: 180.w,
                   ),
                 ),
-                // Expanded contact options appear only if FAB is expanded
-                if (isExpanded)
+                // Only show expanded buttons when isExpanded is true
+                if (animationController.value > 0)
                   Transform.translate(
-                    offset: Offset.fromDirection(getRadiansFromDegree(270), 100),
+                    offset: Offset.fromDirection(getRadiansFromDegree(270), degOneTranslationAnimation.value * 100),
                     child: CircularButton(
                       color: AppColors.tomatoRed,
                       width: 40.w,
@@ -101,9 +131,9 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
                       },
                     ),
                   ),
-                if (isExpanded)
+                if (animationController.value > 0)
                   Transform.translate(
-                    offset: Offset.fromDirection(getRadiansFromDegree(225), 100),
+                    offset: Offset.fromDirection(getRadiansFromDegree(225), degTwoTranslationAnimation.value * 100),
                     child: CircularButton(
                       color: AppColors.tomatoRed,
                       width: 40.w,
@@ -111,16 +141,16 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
                       content: Icon(
                         Icons.message,
                         color: Colors.white,
-                        size: 20.sp,
+                        size: 20.w,
                       ),
                       onClick: () {
                         _communicationService.sendSmsMessage("Hello", [widget.phoneNumber]);
                       },
                     ),
                   ),
-                if (isExpanded)
+                if (animationController.value > 0)
                   Transform.translate(
-                    offset: Offset.fromDirection(getRadiansFromDegree(180), 100),
+                    offset: Offset.fromDirection(getRadiansFromDegree(180), degThreeTranslationAnimation.value * 100),
                     child: CircularButton(
                       color: AppColors.tomatoRed,
                       width: 40.w,
@@ -128,15 +158,13 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
                       content: Icon(
                         FontAwesomeIcons.whatsapp,
                         color: AppColors.white,
-                        size: 20.sp,
+                        size: 20.w,
                       ),
                       onClick: () {
                         _communicationService.sendWhatsAppMessage("Hello", widget.phoneNumber);
                       },
                     ),
                   ),
-
-                // Main button with rotation and label change
                 Transform(
                   transform: Matrix4.rotationZ(getRadiansFromDegree(rotationAnimation.value)),
                   alignment: Alignment.center,
@@ -144,15 +172,22 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
                     color: AppColors.grey300,
                     width: 80.w,
                     height: 80.h,
-                    content: Text(
-                      isAccepted ? "Kontakto" : "Prano", // Change text based on isAccepted state
-                      style: TextStyle(
-                        color: AppColors.tomatoRed,
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    onClick: isAccepted ? _onContactPressed : _onAcceptPressed, // Different actions for "Prano" and "Kontakto"
+                    content: isLoading
+                        ? Lottie.asset(
+                            'assets/animations/loading_round.json', 
+                            repeat: false,
+                            animate: true,
+                          )
+                        : Text(
+                            isAccepted ? "Kontakto" : "Prano", 
+                            style: TextStyle(
+                              color: AppColors.tomatoRed,
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                    onClick: isAccepted ? _onContactPressed : _onAcceptPressed,
+                    isLoading: isLoading,
                   ),
                 ),
               ],
@@ -164,12 +199,14 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
   }
 }
 
+// CircularButton component to handle loading state
 class CircularButton extends StatelessWidget {
   final double width;
   final double height;
   final Color color;
   final Widget content;
   final Function onClick;
+  final bool isLoading;
 
   const CircularButton({
     super.key,
@@ -178,24 +215,45 @@ class CircularButton extends StatelessWidget {
     required this.height,
     required this.content,
     required this.onClick,
+    this.isLoading = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
-      width: width,
-      height: height,
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: () {
-          onClick();
-        },
-        child: Center(child: content),
-      ),
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        if (!isLoading)
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [color.withOpacity(0.6), color],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              shape: BoxShape.circle,
+            ),
+            width: width,
+            height: height,
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () {
+                onClick();
+              },
+              child: Center(child: content),
+            ),
+          ),
+        // Display Lottie animation if loading
+        if (isLoading)
+          SizedBox(
+            width: width,
+            height: height,
+            child: Transform.scale(
+              scale: 2,
+              child: content,
+            ),
+          ),
+      ],
     );
   }
 }

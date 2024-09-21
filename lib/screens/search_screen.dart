@@ -18,7 +18,7 @@ class SearchScreen extends StatefulWidget {
   SearchScreenState createState() => SearchScreenState();
 }
 
-class SearchScreenState extends State<SearchScreen> {
+class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixin {
   Logger logger = Logger();
   GoogleMapController? mapController;
   Set<Marker> markers = {};
@@ -26,24 +26,32 @@ class SearchScreenState extends State<SearchScreen> {
   bool _isLocationSelected = false;
   bool _showProfileContainer = false; 
   String _statusText = 'Kërkesa i është dërguar profesionistit më të afërt\nJu lutem prisni konfirmimin nga ana e tij...';
-  final LatLng _currentLocation = const LatLng(41.333556, 19.849746);
-  LatLng _taskerPosition = const LatLng(41.333688, 19.846087);
+  LatLng currentLocation = const LatLng(41.332918, 19.854820);
+  LatLng taskerPosition = const LatLng(41.333688, 19.846087);
   BitmapDescriptor? currentLocationIcon;
-  bool isAccepted = false;
   BitmapDescriptor? taskerIcon;
-  bool isMoving = false;
-  Timer? timer;
-  int _currentPolylineIndex = 0;
+  bool isAccepted = false;
+  late AnimationController _controller;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
+    
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: Offset.zero, 
+      end: const Offset(0, -1),
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    ));
+
     _loadAndAddCurrentLocationMarker();
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   final mapProvider = Provider.of<MapProvider>(context, listen: false);
-    //   mapProvider.createRoute();
-    //   _startTaskerMovement(mapProvider.polylines.first.points);
-    // });
   }
 
   @override
@@ -51,33 +59,14 @@ class SearchScreenState extends State<SearchScreen> {
     mapController?.dispose();
     super.dispose();
   }
-
-  // Load marker and add it to the map
-  Future<void> _loadAndAddCurrentLocationMarker() async {
-    final icon = await BitmapDescriptor.asset(
-      const ImageConfiguration(size: Size(80, 80)),
-      'assets/images/tasker4.png',
-    );
-
-    setState(() {
-      currentLocationIcon = icon;
-      markers.add(
-        Marker(
-          markerId: const MarkerId('currentLocation'),
-          position: _currentLocation,
-          icon: currentLocationIcon!,
-        ),
-      );
-    });
-  }
   
   // Center the map on the current location
-  void _centerMapOnMarker() {
+  void _centerMapOnMarker(LatLng location) {
     if (mapController != null) {
       mapController!.animateCamera(
         CameraUpdate.newCameraPosition(
           CameraPosition(
-            target: _currentLocation,
+            target: location,
             zoom: 15.5,
           ),
         ),
@@ -92,7 +81,7 @@ class SearchScreenState extends State<SearchScreen> {
       _showAnimation = true;
 
       // Ensure the map is centered when the animation starts
-      _centerMapOnMarker();
+      _centerMapOnMarker(currentLocation);
     });
 
     // Wait for 10 seconds and then change the text and show the profile container
@@ -102,6 +91,18 @@ class SearchScreenState extends State<SearchScreen> {
         _showProfileContainer = true;
         _showAnimation = false;
       });
+
+      // After the state change, create the route and start tasker movement
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final mapProvider = Provider.of<MapProvider>(context, listen: false);
+        
+        // Create route polyline
+        mapProvider.createRoute();
+        _loadTaskerMarker();
+
+        LatLng centerLocation = const LatLng(41.329046, 19.849708);
+        _centerMapOnMarker(centerLocation);
+      });
     });
   }
 
@@ -110,94 +111,69 @@ class SearchScreenState extends State<SearchScreen> {
     logger.d('Searching for new location: $location');
   }
 
-  // This is going to be used when isAccepted is true 
-  Future<void> _loadCustomMarker() async {
-    taskerIcon = await BitmapDescriptor.asset(
-      const ImageConfiguration(size: Size(38, 38)),
-      'assets/icons/handyman.png',
+  Future<void> _loadTaskerMarker() async {
+    // Load tasker icon
+    final taskerIconLoaded = await BitmapDescriptor.asset(
+      const ImageConfiguration(size: Size(80, 80)),
+      'assets/images/tasker3.png',
+    );
+
+    // Load default user location icon
+    final currentLocationIconLoaded = BitmapDescriptor.defaultMarkerWithHue(
+      BitmapDescriptor.hueRed,
     );
 
     setState(() {
-      // Initialize markers after loading the custom icon
+      taskerIcon = taskerIconLoaded;
+      currentLocationIcon = currentLocationIconLoaded;
+
+      // Update markers for both tasker and current location
       markers = {
         Marker(
           markerId: const MarkerId('taskerLocation'),
-          position: _taskerPosition,
+          position: taskerPosition,
           icon: taskerIcon!,
           anchor: const Offset(0.5, 0.5),
         ),
         Marker(
-          markerId: const MarkerId('userLocation'),
-          position: const LatLng(41.332918, 19.854820),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+          markerId: const MarkerId('currentLocation'),
+          position: currentLocation,
+          icon: currentLocationIcon!,
         ),
       };
     });
   }
 
-  // Function to simulate tasker movement along the polyline
-  void _startTaskerMovement(List<LatLng> polylinePoints) {
-    if (isMoving) return; // Prevent multiple movements at the same time
-    isMoving = true;
+  Future<void> _loadAndAddCurrentLocationMarker() async {
+    final icon = await BitmapDescriptor.asset(
+      const ImageConfiguration(size: Size(80, 80)),
+      'assets/images/tasker4.png',
+    );
 
-    timer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
-      if (_currentPolylineIndex < polylinePoints.length - 1) {
-        setState(() {
-          // Move to the next point in the polyline
-          _currentPolylineIndex++;
-          _taskerPosition = polylinePoints[_currentPolylineIndex];
-
-          // Update the polyline by removing the traveled part
-          final mapProvider = Provider.of<MapProvider>(context, listen: false);
-          mapProvider.updatePolyline(polylinePoints.sublist(_currentPolylineIndex));
-
-          // Update the tasker marker
-          _updateTaskerMarker();
-        });
-      } else {
-        timer.cancel();
-        isMoving = false;
-        // _showArrivalConfirmation(context);
-      }
-    });
-  }
-
-  // Function to update the tasker marker position with the preloaded custom image
-  void _updateTaskerMarker() {
     setState(() {
-      if (_taskerPosition == const LatLng(41.332918, 19.854820)) {
-        markers = {
-          Marker(
-            markerId: const MarkerId('userLocation'),
-            position: const LatLng(41.332918, 19.854820),
-            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-          ),
-        };
-      } else {
-        markers = {
-          Marker(
-            markerId: const MarkerId('taskerLocation'),
-            position: _taskerPosition,
-            icon: taskerIcon!,
-            anchor: const Offset(0.5, 0.5),
-          ),
-          Marker(
-            markerId: const MarkerId('userLocation'),
-            position: const LatLng(41.332918, 19.854820),
-            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-          ),
-        };
-      }
+      currentLocationIcon = icon;
+      markers.add(
+        Marker(
+          markerId: const MarkerId('currentLocation'),
+          position: currentLocation,
+          icon: currentLocationIcon!,
+        ),
+      );
     });
   }
 
-  // Callback to handle when task is accepted
   void _onTaskAccepted() {
-    setState(() {
-      _statusText = "Profesionisti u pranua për të kryer punën\nJu mund ta kontaktoni atë direkt ose të prisni...";
-      isAccepted = true;
+    _controller.forward().then((_) {
+      // Once the animation is complete, update the text
+      setState(() {
+        _statusText = "Profesionisti u pranua për të kryer punën\nJu mund ta kontaktoni atë direkt ose të prisni...";
+      });
+
+      // Reverse the animation to slide the widget back down
+      _controller.reverse();
     });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -215,9 +191,12 @@ class SearchScreenState extends State<SearchScreen> {
                     Consumer<MapProvider>(
                       builder: (context, mapProvider, child) {
                         return GoogleMap(
-                          padding: EdgeInsets.only(bottom: _showProfileContainer ? 350.h : 0),
+                          padding: EdgeInsets.only(
+                            top: 90, 
+                            bottom: _showProfileContainer ? 250.h : 0,
+                          ),
                           initialCameraPosition: CameraPosition(
-                            target: _currentLocation,
+                            target: currentLocation,
                             zoom: 15.5,
                           ),
                           onMapCreated: (GoogleMapController controller) {
@@ -271,127 +250,130 @@ class SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildSearchSection() {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeInOut,
-      width: double.infinity,
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.tomatoRedLight, AppColors.tomatoRed],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(30.r),
-          bottomRight: Radius.circular(30.r),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            spreadRadius: 5,
+Widget _buildSearchSection() {
+  return SlideTransition(
+      position: _slideAnimation,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+        width: double.infinity,
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [AppColors.tomatoRedLight, AppColors.tomatoRed],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Text transition
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: Text(
-              _statusText,
-              key: const ValueKey<String>('request_status'),
-              style: GoogleFonts.roboto(
-                color: AppColors.white,
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w400,
-              ),
-              textAlign: TextAlign.center,
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(30.r),
+            bottomRight: Radius.circular(30.r),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              spreadRadius: 5,
             ),
-          ),
-          SizedBox(height: 20.h),
-          // Location input container sliding up
-          AnimatedOpacity(
-            duration: const Duration(milliseconds: 500),
-            opacity: _isLocationSelected ? 0 : 1,
-            child: _isLocationSelected
-                ? const SizedBox() // Hide when location is selected
-                : Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.circular(12.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.location_on,
-                          color: AppColors.tomatoRed,
-                          size: 22.sp,
-                        ),
-                        SizedBox(width: 20.w),
-                        Expanded(
-                          child: TextField(
-                            cursorColor: AppColors.grey700,
-                            style: TextStyle(fontSize: 16.sp),
-                            decoration: InputDecoration(
-                              hintText: 'Kërkoni një vendodhje tjetër...',
-                              hintStyle: TextStyle(color: AppColors.grey300, fontSize: 16.sp),
-                              border: InputBorder.none,
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Text transition
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: Text(
+                _statusText,
+                key: const ValueKey<String>('request_status'),
+                style: GoogleFonts.roboto(
+                  color: AppColors.white,
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w400,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            SizedBox(height: 20.h),
+            // Location input container sliding up
+            AnimatedOpacity(
+              duration: const Duration(milliseconds: 500),
+              opacity: _isLocationSelected ? 0 : 1,
+              child: _isLocationSelected
+                  ? const SizedBox() // Hide when location is selected
+                  : Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(12.r),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.location_on,
+                            color: AppColors.tomatoRed,
+                            size: 22.sp,
+                          ),
+                          SizedBox(width: 20.w),
+                          Expanded(
+                            child: TextField(
+                              cursorColor: AppColors.grey700,
+                              style: TextStyle(fontSize: 16.sp),
+                              decoration: InputDecoration(
+                                hintText: 'Kërkoni një vendodhje tjetër...',
+                                hintStyle: TextStyle(color: AppColors.grey300, fontSize: 16.sp),
+                                border: InputBorder.none,
+                              ),
+                              onSubmitted: (value) {
+                                _searchNewLocation(value);
+                              },
                             ),
-                            onSubmitted: (value) {
-                              _searchNewLocation(value);
-                            },
                           ),
-                        ),
-                        Icon(
-                          Icons.search,
-                          color: AppColors.tomatoRed,
-                          size: 22.sp,
-                        ),
-                      ],
+                          Icon(
+                            Icons.search,
+                            color: AppColors.tomatoRed,
+                            size: 22.sp,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-          ),
-          SizedBox(height: 20.h),
-          // Use current location button sliding up
-          AnimatedOpacity(
-            duration: const Duration(milliseconds: 500),
-            opacity: _isLocationSelected ? 0 : 1,
-            child: _isLocationSelected
-                ? const SizedBox()
-                : GestureDetector(
-                    onTap: _useCurrentLocation,
-                    child: Column(
-                      children: [
-                        Text(
-                          'Përdor Vendodhjen Aktuale',
-                          style: GoogleFonts.roboto(
+            ),
+            SizedBox(height: 20.h),
+            // Use current location button sliding up
+            AnimatedOpacity(
+              duration: const Duration(milliseconds: 500),
+              opacity: _isLocationSelected ? 0 : 1,
+              child: _isLocationSelected
+                  ? const SizedBox()
+                  : GestureDetector(
+                      onTap: _useCurrentLocation,
+                      child: Column(
+                        children: [
+                          Text(
+                            'Përdor Vendodhjen Aktuale',
+                            style: GoogleFonts.roboto(
+                              color: AppColors.white,
+                              fontSize: 16.sp,
+                            ),
+                          ),
+                          SizedBox(height: 5.h),
+                          Icon(
+                            CupertinoIcons.chevron_down,
                             color: AppColors.white,
-                            fontSize: 16.sp,
+                            size: 24.sp,
                           ),
-                        ),
-                        SizedBox(height: 5.h),
-                        Icon(
-                          CupertinoIcons.chevron_down,
-                          color: AppColors.white,
-                          size: 24.sp,
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -411,95 +393,127 @@ class SearchScreenState extends State<SearchScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
+          Row(
             mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  const Icon(Icons.location_on, color: AppColors.grey700),
-                  SizedBox(width: 8.w),
-                  Text(
-                    'Rrethrrotullimi i Farkës, Tiranë',
-                    style: TextStyle(
-                      color: AppColors.black,
-                      fontSize: 16.sp
-                    ),
-                  ),
-                ],
-              ),
+              const Icon(Icons.location_on, color: AppColors.grey700),
+              SizedBox(width: 8.w),
               Text(
-                'Rreth 0.7 km larg',
+                'Rrethrrotullimi i Farkës, Tiranë',
                 style: TextStyle(
-                  fontSize: 14.sp,
-                  color: AppColors.grey700,
+                  color: AppColors.black,
+                  fontSize: 16.sp,
                 ),
               ),
             ],
           ),
-          SizedBox(height: 16.h),
+          SizedBox(height: 4.h),
+          Text(
+            'Rreth 0.7 km larg',
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: AppColors.grey700,
+            ),
+          ),
+          SizedBox(height: 5.h),
+          const Divider(color: AppColors.grey300),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Stack(
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+              Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                elevation: 2,
+                margin: EdgeInsets.symmetric(vertical: 10.h),
+                child: Padding(
+                  padding: EdgeInsets.all(16.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 80.w,
-                        height: 80.h,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppColors.grey300,
-                            width: 3.0,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Arben Gashi',
+                            style: TextStyle(
+                              fontSize: 18.sp,
+                              color: AppColors.grey700,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        child: CircleAvatar(
-                          radius: 36.r,
-                          backgroundImage: const AssetImage('assets/images/client3.png'),
-                        ),
-                      ),
-                      SizedBox(height: 10.h),
-                      Text(
-                        'Arben Gashi',
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          color: AppColors.grey700,
-                        ),
-                      ),
-                      SizedBox(height: 10.h),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/taskerProfile');
-                        },
-                        child: Text(
-                          'Shiko profilin',
-                          style: TextStyle(
-                            fontSize: 18.sp,
+                          Icon(
+                            Icons.military_tech,
                             color: AppColors.tomatoRed,
-                            fontWeight: FontWeight.w500
+                            size: 28.sp,
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 12.h),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Montim Mobiliesh",
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.grey700,
+                              ),
+                            ),
+                            SizedBox(height: 10.h),
+                            Row(
+                              children: [
+                                Text(
+                                  '2000 Lek',
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    color: AppColors.tomatoRed,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(width: 4.w),
+                                Text(
+                                  '/orë pune',
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    color: AppColors.grey700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      SizedBox(height: 20.h),
+                      Center(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
+                            backgroundColor: AppColors.tomatoRed,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/taskerProfile');
+                          },
+                          child: Text(
+                            'Shiko profilin',
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              color: AppColors.white,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ),
                     ],
                   ),
-                  Positioned(
-                    top: 2.w,
-                    right: 2.w,
-                    child: Icon(
-                      Icons.military_tech,
-                      color: AppColors.tomatoRed,
-                      size: 28.sp,
-                    ),
-                  ),
-                ],
+                ),
               ),
               ExpandableFab(
                 phoneNumber: '+355696443833',
-                onAcceptTask: _onTaskAccepted
+                onAcceptTask: _onTaskAccepted,
               ),
             ],
           ),

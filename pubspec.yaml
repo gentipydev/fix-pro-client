@@ -58,6 +58,7 @@ flutter:
     - assets/videos/sample_video.mp4
     - assets/animations/circular_dot_animation.json
     - assets/animations/touch_app.json
+    - assets/animations/loading_round.json
 
 
 flutter_icons:

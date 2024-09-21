@@ -9,5 +9,6 @@ class AppColors {
   static const white = Color(0xFFFFFFFF);
   static const tomatoRed = Color(0xffFF6347);
   static const tomatoRedLight = Color(0xffFF826A);
+  static const tomatoRedLighter = Color(0xffffb3a7);
 }
 

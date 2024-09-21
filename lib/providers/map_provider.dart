@@ -87,8 +87,6 @@ class MapProvider with ChangeNotifier {
     const LatLng(41.332918, 19.854820),
   ];
 
-
-
     _polylines = {
       Polyline(
         polylineId: const PolylineId('route'),
