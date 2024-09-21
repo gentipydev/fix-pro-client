@@ -5,6 +5,7 @@ import 'package:fit_pro_client/providers/tasks_provider.dart';
 import 'package:fit_pro_client/screens/home_screen.dart';
 import 'package:fit_pro_client/screens/login_screen.dart';
 import 'package:fit_pro_client/screens/register_screen.dart';
+import 'package:fit_pro_client/screens/search_screen.dart';
 import 'package:fit_pro_client/screens/tasker_profile_screen.dart';
 import 'package:fit_pro_client/services/auth_check_service.dart';
 import 'package:fit_pro_client/utils/validators.dart';
@@ -73,6 +74,7 @@ class MyApp extends StatelessWidget {
             '/login': (context) => const LoginScreen(),
             '/register': (context) => const RegisterScreen(),
             '/home': (context) => const HomeScreen(),
+            '/search-screen': (context) => const SearchScreen(),
             '/taskerProfile': (context) => const TaskerProfileScreen(),
           },
         );

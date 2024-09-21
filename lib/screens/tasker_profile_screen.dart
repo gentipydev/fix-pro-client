@@ -53,7 +53,7 @@ class _TaskerProfileScreenState extends State<TaskerProfileScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => TaskerProfileScreen(),
+          builder: (context) => const TaskerProfileScreen(),
         ),
       );
     }
@@ -101,7 +101,7 @@ class _TaskerProfileScreenState extends State<TaskerProfileScreen> {
                     },
                     icon: const Icon(Icons.flash_on, color: AppColors.black),
                     label: Text(
-                      'Porosit për punë', 
+                      'Pranoje për punë', 
                       style: TextStyle(
                         fontSize: 18.sp,
                         color: AppColors.black,

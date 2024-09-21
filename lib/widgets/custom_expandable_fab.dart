@@ -6,7 +6,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ExpandableFab extends StatefulWidget {
   final String phoneNumber;
-  const ExpandableFab({super.key, required this.phoneNumber});
+  final VoidCallback? onAcceptTask;
+
+  const ExpandableFab({
+    super.key,
+    required this.phoneNumber,
+    this.onAcceptTask, 
+  });
 
   @override
   ExpandableFabState createState() => ExpandableFabState();
@@ -14,8 +20,9 @@ class ExpandableFab extends StatefulWidget {
 
 class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderStateMixin {
   late AnimationController animationController;
-  late Animation degOneTranslationAnimation, degTwoTranslationAnimation, degThreeTranslationAnimation;
   late Animation rotationAnimation;
+  bool isAccepted = false; 
+  bool isExpanded = false;
 
   final CommunicationService _communicationService = CommunicationService();
 
@@ -32,23 +39,26 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
 
   @override
   void initState() {
-    animationController = AnimationController(vsync: this, duration: const Duration(milliseconds: 250));
-    degOneTranslationAnimation = TweenSequence([
-      TweenSequenceItem<double>(tween: Tween<double>(begin: 0.0, end: 1.2), weight: 75.0),
-      TweenSequenceItem<double>(tween: Tween<double>(begin: 1.2, end: 1.0), weight: 25.0),
-    ]).animate(animationController);
-    degTwoTranslationAnimation = TweenSequence([
-      TweenSequenceItem<double>(tween: Tween<double>(begin: 0.0, end: 1.4), weight: 55.0),
-      TweenSequenceItem<double>(tween: Tween<double>(begin: 1.4, end: 1.0), weight: 45.0),
-    ]).animate(animationController);
-    degThreeTranslationAnimation = TweenSequence([
-      TweenSequenceItem<double>(tween: Tween<double>(begin: 0.0, end: 1.75), weight: 35.0),
-      TweenSequenceItem<double>(tween: Tween<double>(begin: 1.75, end: 1.0), weight: 65.0),
-    ]).animate(animationController);
-    rotationAnimation = Tween<double>(begin: 0.0, end: 360.0).animate(CurvedAnimation(parent: animationController, curve: Curves.easeOut));
+    animationController = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
+    rotationAnimation = Tween<double>(begin: 0.0, end: 360.0).animate(CurvedAnimation(parent: animationController, curve: Curves.easeInOut));
     super.initState();
     animationController.addListener(() {
       setState(() {});
+    });
+  }
+
+  void _onAcceptPressed() {
+    setState(() {
+      isAccepted = true;
+    });
+    animationController.forward();
+
+    widget.onAcceptTask!();
+  }
+
+  void _onContactPressed() {
+    setState(() {
+      isExpanded = !isExpanded; 
     });
   }
 
@@ -73,9 +83,10 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
                     width: 180.w,
                   ),
                 ),
-                if (animationController.value > 0)
+                // Expanded contact options appear only if FAB is expanded
+                if (isExpanded)
                   Transform.translate(
-                    offset: Offset.fromDirection(getRadiansFromDegree(270), degOneTranslationAnimation.value * 100),
+                    offset: Offset.fromDirection(getRadiansFromDegree(270), 100),
                     child: CircularButton(
                       color: AppColors.tomatoRed,
                       width: 40.w,
@@ -90,9 +101,9 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
                       },
                     ),
                   ),
-                if (animationController.value > 0)
+                if (isExpanded)
                   Transform.translate(
-                    offset: Offset.fromDirection(getRadiansFromDegree(225), degTwoTranslationAnimation.value * 100),
+                    offset: Offset.fromDirection(getRadiansFromDegree(225), 100),
                     child: CircularButton(
                       color: AppColors.tomatoRed,
                       width: 40.w,
@@ -100,16 +111,16 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
                       content: Icon(
                         Icons.message,
                         color: Colors.white,
-                        size: 20.w,
+                        size: 20.sp,
                       ),
                       onClick: () {
                         _communicationService.sendSmsMessage("Hello", [widget.phoneNumber]);
                       },
                     ),
                   ),
-                if (animationController.value > 0)
+                if (isExpanded)
                   Transform.translate(
-                    offset: Offset.fromDirection(getRadiansFromDegree(180), degThreeTranslationAnimation.value * 100),
+                    offset: Offset.fromDirection(getRadiansFromDegree(180), 100),
                     child: CircularButton(
                       color: AppColors.tomatoRed,
                       width: 40.w,
@@ -117,35 +128,31 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
                       content: Icon(
                         FontAwesomeIcons.whatsapp,
                         color: AppColors.white,
-                        size: 20.w,
+                        size: 20.sp,
                       ),
                       onClick: () {
                         _communicationService.sendWhatsAppMessage("Hello", widget.phoneNumber);
                       },
                     ),
                   ),
+
+                // Main button with rotation and label change
                 Transform(
                   transform: Matrix4.rotationZ(getRadiansFromDegree(rotationAnimation.value)),
                   alignment: Alignment.center,
                   child: CircularButton(
                     color: AppColors.grey300,
-                    width: 70.w,
-                    height: 70.h,
+                    width: 80.w,
+                    height: 80.h,
                     content: Text(
-                      "Kontakto",
+                      isAccepted ? "Kontakto" : "Prano", // Change text based on isAccepted state
                       style: TextStyle(
                         color: AppColors.tomatoRed,
-                        fontSize: 14.sp,
+                        fontSize: 16.sp,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    onClick: () {
-                      if (animationController.isCompleted) {
-                        animationController.reverse();
-                      } else {
-                        animationController.forward();
-                      }
-                    },
+                    onClick: isAccepted ? _onContactPressed : _onAcceptPressed, // Different actions for "Prano" and "Kontakto"
                   ),
                 ),
               ],

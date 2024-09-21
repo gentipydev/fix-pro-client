@@ -1,12 +1,9 @@
-import 'dart:ui';
 import 'package:fit_pro_client/screens/favourite_taskers_screen.dart';
-import 'package:fit_pro_client/screens/search_screen.dart';
 import 'package:fit_pro_client/screens/tasks_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fit_pro_client/providers/taskers_provider.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:logger/logger.dart';
@@ -152,61 +149,6 @@ final List<Map<String, String>> categories = [
     });
   }
 
-  Future<void> _fetchTasker(BuildContext context, dynamic tasker) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Stack(
-        children: [
-          BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-            child: Container(
-              color: AppColors.white.withOpacity(0.8),
-            ),
-          ),
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: EdgeInsets.all(16.w),
-                  child: Text(
-                    'Profesionisti me afër jush është ...',
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      color: AppColors.tomatoRed,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 20.h),
-                SpinKitFadingCircle(
-                  color: AppColors.tomatoRed,
-                  size: 80.w,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-
-    await Future.delayed(const Duration(seconds: 3));
-
-    if (!mounted) return;
-
-    Navigator.of(context).pop();
-
-    if (mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const SearchScreen(),
-        ),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final taskersProvider = Provider.of<TaskersProvider>(context, listen: false);
@@ -320,10 +262,9 @@ final List<Map<String, String>> categories = [
                               fontSize: 16.sp,
                             ),
                           ),
-                          onTap: () {
-                            // Handle the suggestion tap
-                            _fetchTasker(context, tasker);
-                          },
+                            onTap: () {
+                              Navigator.pushNamed(context, '/search-screen');
+                            },
                         );
                       },
                     ),
@@ -413,7 +354,7 @@ final List<Map<String, String>> categories = [
         final category = categories[index];
         return GestureDetector(
           onTap: () {
-            _fetchTasker(context, tasker);
+            Navigator.pushNamed(context, '/search-screen');
           },
           child: Column(
             children: [
