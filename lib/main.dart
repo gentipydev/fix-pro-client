@@ -1,12 +1,12 @@
 import 'package:fit_pro_client/providers/auth_provider.dart';
 import 'package:fit_pro_client/providers/login_validation_provider.dart';
+import 'package:fit_pro_client/providers/task_state_provider.dart';
 import 'package:fit_pro_client/providers/taskers_provider.dart';
 import 'package:fit_pro_client/providers/tasks_provider.dart';
 import 'package:fit_pro_client/screens/home_screen.dart';
 import 'package:fit_pro_client/screens/login_screen.dart';
 import 'package:fit_pro_client/screens/register_screen.dart';
 import 'package:fit_pro_client/screens/search_screen.dart';
-import 'package:fit_pro_client/screens/tasker_profile_screen.dart';
 import 'package:fit_pro_client/services/auth_check_service.dart';
 import 'package:fit_pro_client/utils/validators.dart';
 import 'package:flutter/material.dart';
@@ -31,6 +31,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => Validators()),
         ChangeNotifierProvider(create: (_) => LoginValidationProvider()),
         ChangeNotifierProvider(create: (_) => MapProvider()),
+        ChangeNotifierProvider(create: (_) => TaskStateProvider()),
         ChangeNotifierProvider(create: (_) => TaskersProvider()),
         ChangeNotifierProvider(create: (_) => TasksProvider()),
       ],
@@ -75,7 +76,6 @@ class MyApp extends StatelessWidget {
             '/register': (context) => const RegisterScreen(),
             '/home': (context) => const HomeScreen(),
             '/search-screen': (context) => const SearchScreen(),
-            '/taskerProfile': (context) => const TaskerProfileScreen(),
           },
         );
       },

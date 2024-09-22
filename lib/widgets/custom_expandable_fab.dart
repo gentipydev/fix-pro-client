@@ -1,18 +1,18 @@
+import 'package:fit_pro_client/providers/task_state_provider.dart';
 import 'package:fit_pro_client/services/communication_service.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:lottie/lottie.dart';
+import 'package:provider/provider.dart';
 
 class ExpandableFab extends StatefulWidget {
   final String phoneNumber;
-  final VoidCallback? onAcceptTask;
 
   const ExpandableFab({
     super.key,
     required this.phoneNumber,
-    this.onAcceptTask,
   });
 
   @override
@@ -23,7 +23,6 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
   late AnimationController animationController;
   late Animation rotationAnimation;
   late Animation degOneTranslationAnimation, degTwoTranslationAnimation, degThreeTranslationAnimation;
-  bool isAccepted = false;
   bool isExpanded = false;
   bool isLoading = false;
 
@@ -57,22 +56,6 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
     });
   }
 
-  // Handle the "Prano" button press
-  void _onAcceptPressed() {
-    setState(() {
-      isLoading = true;
-    });
-
-    Future.delayed(const Duration(seconds: 2), () {
-      setState(() {
-        isAccepted = true; 
-        isLoading = false; 
-      });
-
-      widget.onAcceptTask!();
-    });
-  }
-
   // Handle expanding the FAB to show more actions
   void _onContactPressed() {
     setState(() {
@@ -94,10 +77,14 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
 
   @override
   Widget build(BuildContext context) {
+    // Listen to the global TaskStateProvider's isAccepted state
+    final taskState = context.watch<TaskStateProvider>();
+    final isAccepted = taskState.isAccepted;
+
     return Container(
       color: Colors.transparent,
-      width: 200.w,
-      height: 200.h,
+      width: 190.w,
+      height: 190.h,
       child: Stack(
         children: <Widget>[
           Positioned(
@@ -119,8 +106,8 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
                     offset: Offset.fromDirection(getRadiansFromDegree(270), degOneTranslationAnimation.value * 100),
                     child: CircularButton(
                       color: AppColors.tomatoRed,
-                      width: 40.w,
-                      height: 40.h,
+                      width: 36.w,
+                      height: 36.h,
                       content: Icon(
                         Icons.phone,
                         color: Colors.white,
@@ -136,8 +123,8 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
                     offset: Offset.fromDirection(getRadiansFromDegree(225), degTwoTranslationAnimation.value * 100),
                     child: CircularButton(
                       color: AppColors.tomatoRed,
-                      width: 40.w,
-                      height: 40.h,
+                      width: 36.w,
+                      height: 36.h,
                       content: Icon(
                         Icons.message,
                         color: Colors.white,
@@ -153,8 +140,8 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
                     offset: Offset.fromDirection(getRadiansFromDegree(180), degThreeTranslationAnimation.value * 100),
                     child: CircularButton(
                       color: AppColors.tomatoRed,
-                      width: 40.w,
-                      height: 40.h,
+                      width: 36.w,
+                      height: 36.h,
                       content: Icon(
                         FontAwesomeIcons.whatsapp,
                         color: AppColors.white,
@@ -169,24 +156,34 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
                   transform: Matrix4.rotationZ(getRadiansFromDegree(rotationAnimation.value)),
                   alignment: Alignment.center,
                   child: CircularButton(
-                    color: AppColors.grey300,
+                    color: AppColors.tomatoRed,
                     width: 80.w,
                     height: 80.h,
                     content: isLoading
                         ? Lottie.asset(
-                            'assets/animations/loading_round.json', 
+                            'assets/animations/loading_round.json',
                             repeat: false,
                             animate: true,
                           )
                         : Text(
-                            isAccepted ? "Kontakto" : "Prano", 
+                            isAccepted ? "Kontakto" : "Prano",
                             style: TextStyle(
-                              color: AppColors.tomatoRed,
+                              color: AppColors.grey700,
                               fontSize: 16.sp,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                    onClick: isAccepted ? _onContactPressed : _onAcceptPressed,
+                    onClick: isAccepted ? _onContactPressed : () {
+                      context.read<TaskStateProvider>().acceptTask();
+                      setState(() {
+                        isLoading = true;
+                      });
+                      Future.delayed(const Duration(milliseconds: 1500), () {
+                        setState(() {
+                          isLoading = false;
+                        });
+                      });
+                    },
                     isLoading: isLoading,
                   ),
                 ),
@@ -227,7 +224,7 @@ class CircularButton extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [color.withOpacity(0.6), color],
+                colors: [color.withOpacity(0.5), color],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -249,7 +246,7 @@ class CircularButton extends StatelessWidget {
             width: width,
             height: height,
             child: Transform.scale(
-              scale: 2,
+              scale: 1.5,
               child: content,
             ),
           ),

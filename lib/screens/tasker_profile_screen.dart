@@ -1,68 +1,67 @@
-import 'dart:ui';
-import 'package:fit_pro_client/screens/waiting_screen.dart';
+import 'package:fit_pro_client/providers/map_provider.dart';
+import 'package:fit_pro_client/providers/task_state_provider.dart';
+import 'package:fit_pro_client/screens/search_screen.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:fit_pro_client/widgets/video_player_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:provider/provider.dart';
 
 class TaskerProfileScreen extends StatefulWidget {
-
   const TaskerProfileScreen({super.key});
 
   @override
-  State<TaskerProfileScreen> createState() => _TaskerProfileScreenState();
+  TaskerProfileScreenState createState() => TaskerProfileScreenState();
 }
 
-class _TaskerProfileScreenState extends State<TaskerProfileScreen> {
+class TaskerProfileScreenState extends State<TaskerProfileScreen> {
+  bool isLoadingAccept = false; 
+  bool isLoadingReject = false; 
 
-  Future<void> _fetchTasker(BuildContext context) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Stack(
-        children: [
-          BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-            child: Container(
-              color: AppColors.white.withOpacity(0.8),
-            ),
-          ),
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SpinKitFadingCircle(
-                  color: AppColors.tomatoRed,
-                  size: 80.w,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+  void _handleAcceptTask() async {
+    setState(() {
+      isLoadingAccept = true;
+    });
 
-    await Future.delayed(const Duration(seconds: 3));
+    // Simulate a network request
+    await Future.delayed(const Duration(seconds: 2));
 
-    if (!mounted) return;
+    context.read<TaskStateProvider>().acceptTask();
 
-    Navigator.of(context).pop();
+    setState(() {
+      isLoadingAccept = false;
+    });
 
-    if (mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const TaskerProfileScreen(),
-        ),
-      );
-    }
+    Navigator.pop(context);
   }
 
+  void _handleRejectTask() async {
+    setState(() {
+      isLoadingReject = true;
+    });
+
+    // Simulate a network request
+    await Future.delayed(const Duration(seconds: 2));
+
+    context.read<TaskStateProvider>().resetTask();
+
+    setState(() {
+      isLoadingReject = false;
+      final mapProvider = Provider.of<MapProvider>(context, listen: false);
+      mapProvider.clearPolylines();
+    });
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const SearchScreen()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    
+    final taskState = context.watch<TaskStateProvider>();
+
     return Scaffold(
       body: Stack(
         children: [
@@ -75,71 +74,82 @@ class _TaskerProfileScreenState extends State<TaskerProfileScreen> {
                 _buildTasksSection(),
                 _buildClientReviewsSection(),
                 _buildScheduleSection(),
-                SizedBox(height: 120.h)
+                SizedBox(height: 120.h),
               ],
             ),
           ),
-          // Floating buttons at the bottom
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: EdgeInsets.only(left: 16.w, right: 16.w, bottom: 16.h),
-              color: AppColors.white.withOpacity(0.9),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const WaitingScreen(),
+          if (!taskState.isAccepted)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: EdgeInsets.only(left: 16.w, right: 16.w, bottom: 16.h),
+                color: AppColors.white.withOpacity(0.9),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: isLoadingAccept ? null : _handleAcceptTask,
+                      icon: isLoadingAccept
+                          ? const Padding(
+                              padding: EdgeInsets.all(4.0),
+                              child: SpinKitThreeBounce(
+                                color: AppColors.tomatoRed,
+                                size: 16.0,
+                              ),
+                            )
+                          : const Icon(Icons.flash_on, color: AppColors.black),
+                      label: isLoadingAccept
+                          ? const SizedBox.shrink()
+                          : Text(
+                              'Pranoje për punë',
+                              style: TextStyle(
+                                fontSize: 18.sp,
+                                color: AppColors.black,
+                              ),
+                            ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.tomatoRed,
+                        minimumSize: Size(double.infinity, 50.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.r),
                         ),
-                      );
-                    },
-                    icon: const Icon(Icons.flash_on, color: AppColors.black),
-                    label: Text(
-                      'Pranoje për punë', 
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        color: AppColors.black,
                       ),
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.tomatoRed,
-                      minimumSize: Size(double.infinity, 50.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.r),
+                    SizedBox(height: 16.h),
+                    ElevatedButton.icon(
+                      onPressed: isLoadingReject ? null : _handleRejectTask,
+                      icon: isLoadingReject
+                          ? const Padding(
+                              padding: EdgeInsets.all(4.0),
+                              child: SpinKitThreeBounce(
+                                color: AppColors.tomatoRed,
+                                size: 16.0,
+                              ),
+                            )
+                          : const Icon(Icons.close, color: AppColors.black),
+                      label: isLoadingReject
+                          ? const SizedBox.shrink()
+                          : Text(
+                              'Hiq dorë',
+                              style: TextStyle(
+                                fontSize: 18.sp,
+                                color: AppColors.black,
+                              ),
+                            ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.grey300,
+                        minimumSize: Size(double.infinity, 50.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
                       ),
                     ),
-                  ),
-                  SizedBox(height: 16.h),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      _fetchTasker(context);
-                    },
-                    icon: const Icon(Icons.close, color: AppColors.black),
-                    label: Text(
-                      'Hiq dorë', 
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        color: AppColors.black,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.grey300,
-                      minimumSize: Size(double.infinity, 50.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
         ],
       ),
     );

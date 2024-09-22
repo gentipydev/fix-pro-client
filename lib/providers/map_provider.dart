@@ -110,4 +110,10 @@ class MapProvider with ChangeNotifier {
     };
     notifyListeners();
   }
+  
+  // Method to clear all polylines
+  void clearPolylines() {
+    _polylines = {};
+    notifyListeners();
+  }
 }
