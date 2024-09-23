@@ -169,8 +169,8 @@ class TasksScreenState extends State<TasksScreen> with SingleTickerProviderState
                   insets: EdgeInsets.symmetric(horizontal: 100.w),
                 ),
                 tabs: const [
-                  Tab(text: 'Porositura'),
-                  Tab(text: 'Kaluara'),
+                  Tab(text: 'POROSITURA'),
+                  Tab(text: 'PËRFUNDUARA'),
                 ],
               ),
             ),
@@ -222,7 +222,7 @@ class TasksScreenState extends State<TasksScreen> with SingleTickerProviderState
                                   },
                                   child: TaskCard(
                                     title: task.title,
-                                    warningText: 'Ka ende 58 minuta kohë për t\'u përgjigjur',
+                                    warningText: 'Puna është ende në pritje për tu pranuar',
                                     date: task.date,
                                     time: task.time,
                                     location: task.taskArea!,

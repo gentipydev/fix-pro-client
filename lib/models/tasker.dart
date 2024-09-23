@@ -10,7 +10,8 @@ class Tasker {
   final String email;
   final List<String> skills;
   final String bio;
-  final bool isSuperPunetor; 
+  final bool isSuperPunetor;
+  bool isFavorite; // New property to track if the tasker is a favorite
 
   Tasker({
     required this.fullName,
@@ -23,14 +24,13 @@ class Tasker {
     this.skills = const [],
     this.bio = '',
     this.isSuperPunetor = false,
+    this.isFavorite = false,
   });
 
-  // Method to display a summary of the Tasker
   String get summary {
-    return 'Tasker: $fullName, Rating: $rating, Location: (${location.latitude}, ${location.longitude}), Super Punëtor: $isSuperPunetor';
+    return 'Tasker: $fullName, Rating: $rating, Location: (${location.latitude}, ${location.longitude}), Super Punëtor: $isSuperPunetor, Favorite: $isFavorite';
   }
 
-  // Factory method to create a Tasker from a JSON object
   factory Tasker.fromJson(Map<String, dynamic> json) {
     return Tasker(
       fullName: json['full_name'],
@@ -42,11 +42,11 @@ class Tasker {
       email: json['email'] ?? '',
       skills: List<String>.from(json['skills'] ?? []),
       bio: json['bio'] ?? '',
-      isSuperPunetor: json['is_super_punetor'] ?? false, 
+      isSuperPunetor: json['is_super_punetor'] ?? false,
+      isFavorite: json['is_favorite'] ?? false,
     );
   }
 
-  // Method to convert a Tasker object to JSON
   Map<String, dynamic> toJson() {
     return {
       'full_name': fullName,
@@ -62,6 +62,7 @@ class Tasker {
       'skills': skills,
       'bio': bio,
       'is_super_punetor': isSuperPunetor,
+      'is_favorite': isFavorite, 
     };
   }
 }

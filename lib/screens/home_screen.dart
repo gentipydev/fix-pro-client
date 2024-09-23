@@ -56,7 +56,7 @@ class HomeScreenState extends State<HomeScreen> {
           ),
           BottomNavigationBarItem(
             icon: ImageIcon(AssetImage('assets/icons/taskers.png')),
-            label: 'Preferuarit',
+            label: 'Profesionist',
           ),
           BottomNavigationBarItem(
             icon: ImageIcon(AssetImage('assets/icons/profile.png')),
@@ -70,7 +70,6 @@ class HomeScreenState extends State<HomeScreen> {
   }
 }
 
-
 class HomeContent extends StatefulWidget {
   const HomeContent({super.key});
 
@@ -83,7 +82,6 @@ class _HomeContentState extends State<HomeContent> {
   List<Map<String, String>> filteredSuggestions = [];
   final TextEditingController _controller = TextEditingController();
   bool _isLoading = true;
-  bool _hasPrecachedImages = false;
 
 final List<Map<String, String>> categories = [
     {'name': 'Montim mobiliesh', 'imagePath': 'assets/images/montim_mobiliesh.jpg'},
@@ -117,32 +115,18 @@ final List<Map<String, String>> categories = [
   void initState() {
     super.initState();
     _loadCategories();
+
+    _controller.clear();
+    filteredSuggestions.clear();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_hasPrecachedImages) {
-      _precacheImages();
-      _hasPrecachedImages = true;
-    }
-  }
-
-  // Precache the images from assets
-  Future<void> _precacheImages() async {
-    for (var category in categories) {
-      await precacheImage(AssetImage(category['imagePath']!), context);
-    }
-  }
 
   Future<void> _loadCategories() async {
     setState(() {
       _isLoading = true;
     });
 
-    await Future.delayed(const Duration(milliseconds: 100));
-
-    await _precacheImages();
+    await Future.delayed(const Duration(milliseconds: 1500));
 
     setState(() {
       _isLoading = false;
@@ -160,7 +144,20 @@ final List<Map<String, String>> categories = [
         children: [
           // Header
           Container(
-            color: AppColors.tomatoRedLight,
+              decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AppColors.tomatoRedLight, AppColors.tomatoRed],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
             width: double.infinity,
             padding: EdgeInsets.all(16.w),
             child: Column(
@@ -169,16 +166,16 @@ final List<Map<String, String>> categories = [
                 Text(
                   'Përshëndetje Genti !',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.white,
                     fontSize: 24.sp,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
                 SizedBox(height: 30.h),
                 Text(
                   'Për çfarë ju nevojitet ndihmë sot...',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.white,
                     fontSize: 16.sp,
                   ),
                 ),
@@ -197,11 +194,8 @@ final List<Map<String, String>> categories = [
                       if (value.isEmpty) {
                         filteredSuggestions.clear();
                       } else {
-                        filteredSuggestions = categories
-                            .where((category) => category['name']!
-                                .toLowerCase()
-                                .contains(value.toLowerCase()))
-                            .toList();
+                        filteredSuggestions = categories.where((category) => 
+                        category['name']!.toLowerCase().contains(value.toLowerCase())).toList();
                       }
                     });
                   },
@@ -213,8 +207,7 @@ final List<Map<String, String>> categories = [
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: AppColors.grey100,
-                    contentPadding:
-                        EdgeInsets.symmetric(vertical: 16.h, horizontal: 12.w),
+                    contentPadding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 12.w),
                     hintText: "Provoni 'montim mobiliesh' ose 'lyerje'",
                     hintStyle: TextStyle(
                       color: AppColors.grey300,
@@ -262,9 +255,13 @@ final List<Map<String, String>> categories = [
                               fontSize: 16.sp,
                             ),
                           ),
-                            onTap: () {
-                              Navigator.pushNamed(context, '/search-screen');
-                            },
+                          onTap: () {
+                            setState(() {
+                              _controller.clear();
+                              filteredSuggestions.clear();
+                            });
+                            Navigator.pushNamed(context, '/search-screen');
+                          },
                         );
                       },
                     ),

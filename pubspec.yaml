@@ -59,6 +59,7 @@ flutter:
     - assets/animations/circular_dot_animation.json
     - assets/animations/touch_app.json
     - assets/animations/loading_round.json
+    - assets/animations/radar_searching.json
 
 
 flutter_icons:

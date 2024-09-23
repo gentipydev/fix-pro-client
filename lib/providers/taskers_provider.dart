@@ -6,7 +6,15 @@ class TaskersProvider extends ChangeNotifier {
   List<Tasker> _taskers = [];
   LatLng? _centralLocation;
 
-  List<Tasker> get taskers => _taskers;
+  // Getters for taskers
+  List<Tasker> get taskers => _taskers;               // All taskers
+
+  // Get favorite taskers where isFavorite is true
+  List<Tasker> get favoriteTaskers => _taskers.where((tasker) => tasker.isFavorite).toList();
+
+  // Past taskers (return all for now, as an example)
+  List<Tasker> get pastTaskers => _taskers;
+
   LatLng? get centralLocation => _centralLocation;
 
   TaskersProvider() {
@@ -17,7 +25,7 @@ class TaskersProvider extends ChangeNotifier {
   void _loadFakeTaskers() {
     _taskers = [
       Tasker(
-        fullName: 'Arben Gashi',
+        fullName: 'Arben G.',
         location: const LatLng(41.3317, 19.8318),
         rating: 4.8,
         profileImage: 'assets/images/client1.png',
@@ -25,11 +33,12 @@ class TaskersProvider extends ChangeNotifier {
         phoneNumber: '+355671234567',
         email: 'arbengashi@example.com',
         skills: ['Shtrim pllakash', 'Punime elektrike'],
-        bio: 'Punëtor me përvojë me mbi 10 vjet në zanatin e tij...',
+        bio: 'Jam një punëtor me përvojë me mbi 10 vjet në zanatin tim. Kam punuar me firma te ndryshme te instalimeve elektrike dhe...',
         isSuperPunetor: true,
+        isFavorite: true,
       ),
       Tasker(
-        fullName: 'Eriona Hoxha',
+        fullName: 'Eriona H.',
         location: const LatLng(41.3444, 19.8220),
         rating: 4.9,
         profileImage: 'assets/images/client2.png',
@@ -37,21 +46,11 @@ class TaskersProvider extends ChangeNotifier {
         phoneNumber: '+355682345678',
         email: 'erionahoxha@example.com',
         skills: ['Lyerje', 'Punime druri'],
-        bio: 'Eksperte në përmirësimin dhe dekorimin e shtëpisë...',
+        bio: 'Jam nje eksperte në përmirësimin dhe dekorimin e shtëpisë. Kam pasur nje pasion të madh që në fëmijeri që te merrem me punime druri dhe ...',
+        isFavorite: true,  
       ),
       Tasker(
-        fullName: 'Blerim Krasniqi',
-        location: const LatLng(41.3077, 19.7990), 
-        rating: 4.7,
-        profileImage: 'assets/images/client3.png',
-        mapProfileImage: 'assets/images/tasker3.png',
-        phoneNumber: '+355691234567',
-        email: 'blerimkrasniqi@example.com',
-        skills: ['Kopshtari'],
-        bio: 'Specialist për kujdesin ndaj kopshtit...',
-      ),
-      Tasker(
-        fullName: 'Lule Bajraktari',
+        fullName: 'Lule B.',
         location: const LatLng(41.3565, 19.7494),
         rating: 4.6,
         profileImage: 'assets/images/client4.png',
@@ -59,19 +58,9 @@ class TaskersProvider extends ChangeNotifier {
         phoneNumber: '+355692345678',
         email: 'lulebajraktari@example.com',
         skills: ['Pastrim', 'Organizimi i hapësirave'],
-        bio: 'Eksperte në pastrimin dhe organizimin e hapësirave të banimit...',
-        isSuperPunetor: true
-      ),
-      Tasker(
-        fullName: 'Artan Rexhepi',
-        location: const LatLng(41.2810, 19.8916),
-        rating: 4.9,
-        profileImage: 'assets/images/client5.png',
-        mapProfileImage: 'assets/images/tasker5.png',
-        phoneNumber: '+355672345679',
-        email: 'artanrexhepi@example.com',
-        skills: ['Lyerje', 'Instalime hidraulike'],
-        bio: 'Ndërtues me përvojë të gjatë në lyerje dhe instalime hidraulike...',
+        bio: 'Jam një eksperte në pastrimin dhe organizimin e hapësirave të banimit. Jam shum e përkushtuar ndaj cdo detaji dhe kujdesem ...',
+        isSuperPunetor: true,
+        isFavorite: false, 
       ),
     ];
 
@@ -81,12 +70,28 @@ class TaskersProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Function to remove a tasker
-  void removeTasker(Tasker tasker) {
-    _taskers.remove(tasker);
-    notifyListeners(); // Notify listeners to update the UI
-  }
+  // Function to remove a tasker from the favorites list
+  void removeTaskerFromFavorites(Tasker tasker) {
+    int taskerIndex = _taskers.indexOf(tasker);
+    
+    if (taskerIndex != -1) {
+      _taskers[taskerIndex] = Tasker(
+        fullName: tasker.fullName,
+        location: tasker.location,
+        rating: tasker.rating,
+        profileImage: tasker.profileImage,
+        mapProfileImage: tasker.mapProfileImage,
+        phoneNumber: tasker.phoneNumber,
+        email: tasker.email,
+        skills: tasker.skills,
+        bio: tasker.bio,
+        isSuperPunetor: tasker.isSuperPunetor,
+        isFavorite: false, // Set isFavorite to false
+      );
 
+      notifyListeners(); // Notify listeners to update the UI
+    }
+  }
   // Calculate the central location based on the average location of all taskers
   void _calculateCentralLocation() {
     if (_taskers.isEmpty) {

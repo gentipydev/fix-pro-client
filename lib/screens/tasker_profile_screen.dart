@@ -280,9 +280,9 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
           Stack(
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(8.0.r),
+                borderRadius: BorderRadius.circular(8.r),
                 child: Image.asset(
-                  'assets/images/taskerthumbnail1.jpg',
+                  'assets/images/worker.jpg',
                   height: 180.h,
                   width: double.infinity,
                   fit: BoxFit.cover,
@@ -319,20 +319,87 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
               _buildProfileDetail(null, '2.000 Lek', 'për orë pune'),
             ],
           ),
-          SizedBox(height: 30.h),
-          Center(
-            child: TextButton(
-              onPressed: () {
-                // Handle adding to favorites
-              },
-              child: const Text(
-                'Shto tek të preferuarit',
-                style: TextStyle(
-                  color: AppColors.grey700,
-                ),
+          SizedBox(height: 20.h),
+
+          // ElevatedButton.icon(
+          //   onPressed: () {
+          //     // Handle button press
+          //   },
+          //   icon: const Icon(Icons.flash_on, color: AppColors.black),
+          //   label: Text(
+          //     'Porosit për punë', 
+          //     style: TextStyle(
+          //       fontSize: 16.sp,
+          //       color: AppColors.black
+          //     )
+          //   ),
+          //   style: ElevatedButton.styleFrom(
+          //     backgroundColor: AppColors.tomatoRed,
+          //     minimumSize: Size(double.infinity, 40.h),
+          //     shape: RoundedRectangleBorder(
+          //       borderRadius: BorderRadius.circular(8.r),
+          //     ),
+          //   ),
+          // ),
+          // SizedBox(height: 8.h),
+          // OutlinedButton(
+          //   onPressed: () {
+          //     // Handle button press
+          //   },
+          //   style: OutlinedButton.styleFrom(
+          //     minimumSize: Size(double.infinity, 40.h),
+          //     side: const BorderSide(color: AppColors.grey700),
+          //     shape: RoundedRectangleBorder(
+          //       borderRadius: BorderRadius.circular(8.r),
+          //     ),
+          //   ),
+          //   child: Text(
+          //     'Kontaktoje', 
+          //     style: TextStyle(
+          //       fontSize: 16.sp,
+          //       color: AppColors.grey700
+          //     )
+          //   ),
+          // ),
+          // SizedBox(height: 8.h),
+
+          OutlinedButton(
+            onPressed: () {
+              // Handle button press
+            },
+            style: OutlinedButton.styleFrom(
+              minimumSize: Size(double.infinity, 40.h),
+              side: const BorderSide(color: AppColors.grey700),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.r),
               ),
             ),
-          )
+          child: Text(
+              'Shtoje tek të preferuarit', 
+              style: TextStyle(
+                fontSize: 16.sp,
+                color: AppColors.grey700
+              )
+            ),
+          ),
+          SizedBox(height: 20.h),
+          Row(
+            children: [
+              Icon(Icons.whatshot, color: AppColors.tomatoRed, size: 16.w),
+              SizedBox(width: 8.w),
+              Text('Popullor', style: TextStyle(fontSize: 14.sp)),
+            ],
+          ),
+          SizedBox(height: 4.h),
+          Text('2 punë te prenotuara ne 24 orët e fundit', style: TextStyle(fontSize: 12.sp)),
+          SizedBox(height: 12.h),
+          Row(
+            children: [
+              Icon(Icons.access_time, color: AppColors.grey700, size: 16.w),
+              SizedBox(width: 8.w),
+              Text('Zakonisht përgjigjet brenda 1 minuti', style: TextStyle(fontSize: 12.sp)),
+            ],
+          ),
         ],
       ),
     );

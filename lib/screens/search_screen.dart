@@ -3,6 +3,7 @@ import 'package:fit_pro_client/providers/map_provider.dart';
 import 'package:fit_pro_client/providers/task_state_provider.dart';
 import 'package:fit_pro_client/screens/tasker_profile_screen.dart';
 import 'package:fit_pro_client/utils/constants.dart';
+import 'package:fit_pro_client/utils/fake_addresses.dart';
 import 'package:fit_pro_client/widgets/custom_expandable_fab.dart';
 import 'package:fit_pro_client/widgets/custom_shooting_icon_animation.dart';
 import 'package:flutter/cupertino.dart';
@@ -33,13 +34,15 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
   late AnimationController _controller;
   late Animation<Offset> _slideAnimation;
   bool _onTaskAcceptedCalled = false;
+  List<String> _filteredAddresses = [];
+  final TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(seconds: 1),
       vsync: this,
     );
 
@@ -97,7 +100,7 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
       taskState.setShowProfileContainer(true);
       taskState.setShowAnimation(false);
 
-      // After the state change, create the route and start tasker movement
+      // After the state change, create the route
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final mapProvider = Provider.of<MapProvider>(context, listen: false);
 
@@ -112,9 +115,20 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
     });
   }
 
-  // Search functionality (placeholder)
-  void _searchNewLocation(String location) {
-    logger.d('Searching for new location: $location');
+  void _searchNewLocation(String query) {
+    logger.d('Searching for new location: $query');
+    setState(() {
+      _filteredAddresses = fakeAddresses.where((address) =>
+              address.toLowerCase().contains(query.toLowerCase())).toList();
+    });
+  }
+
+  void _selectLocation(String address) {
+    logger.d('Location selected: $address');
+    setState(() {
+      searchController.text = address;
+      _filteredAddresses.clear();
+    });
   }
 
   Future<void> _loadTaskerMarker() async {
@@ -224,35 +238,53 @@ Widget build(BuildContext context) {
             },
           ),
         ),
+
         // Shooting Icons Animation
-       if (!taskState.isLocationSelected)
-        const Positioned(
-          top: 120,
-          left: 0,
-          right: 0,
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: ShootingIconsAnimation(),
+        if (!taskState.isLocationSelected)
+          const Positioned(
+            top: 120,
+            left: 0,
+            right: 0,
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ShootingIconsAnimation(),
+            ),
           ),
-        ),
-        // Circular dot animation (optional)
+
         if (taskState.showAnimation)
           Positioned.fill(
             child: Align(
               alignment: Alignment.center,
-              child: Opacity(
-                opacity: 0.6,
-                child: ClipOval(
-                  child: SizedBox(
-                    height: 340.w,
-                    width: 340.w,
-                    child: lottie.Lottie.asset(
-                      'assets/animations/circular_dot_animation.json',
-                      repeat: true,
-                      fit: BoxFit.cover,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Opacity(
+                    opacity: 0.6,
+                    child: ClipOval(
+                      child: SizedBox(
+                        height: 400.w,
+                        width: 400.w,
+                        child: lottie.Lottie.asset(
+                          'assets/animations/circular_dot_animation.json',
+                          repeat: true,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  Opacity(
+                    opacity: 0.3,
+                    child: SizedBox(
+                      height: 300.w,
+                      width: 300.w,
+                      child: lottie.Lottie.asset(
+                        'assets/animations/radar_searching.json',
+                        repeat: true,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -277,10 +309,9 @@ Widget build(BuildContext context) {
   );
 }
 
-
-Widget _buildSearchSection() {
-  final taskState = Provider.of<TaskStateProvider>(context);
-  return SlideTransition(
+  Widget _buildSearchSection() {
+    final taskState = Provider.of<TaskStateProvider>(context);
+    return SlideTransition(
       position: _slideAnimation,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 500),
@@ -328,49 +359,118 @@ Widget _buildSearchSection() {
               duration: const Duration(milliseconds: 500),
               opacity: taskState.isLocationSelected ? 0 : 1,
               child: taskState.isLocationSelected
-                  ? const SizedBox() // Hide when location is selected
+                  ? const SizedBox()
                   : Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(12.r),
+                      padding: EdgeInsets.symmetric(horizontal: 10.w),
+                        decoration: BoxDecoration(
+			                  borderRadius: BorderRadius.circular(12.r),
+                        gradient: const LinearGradient(
+                          colors: [AppColors.white, AppColors.grey100],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.1),
-                            blurRadius: 6,
-                            offset: const Offset(0, 3),
+                            blurRadius: 10,
+                            spreadRadius: 5,
                           ),
                         ],
                       ),
-                      child: Row(
+                      child: Column(
                         children: [
-                          Icon(
-                            Icons.location_on,
-                            color: AppColors.tomatoRed,
-                            size: 22.sp,
-                          ),
-                          SizedBox(width: 20.w),
-                          Expanded(
-                            child: TextField(
-                              cursorColor: AppColors.grey700,
-                              style: TextStyle(fontSize: 16.sp),
-                              decoration: InputDecoration(
-                                hintText: 'Kërkoni një vendodhje tjetër...',
-                                hintStyle: TextStyle(color: AppColors.grey300, fontSize: 16.sp),
-                                border: InputBorder.none,
-                              ),
-                              onSubmitted: (value) {
-                                _searchNewLocation(value);
-                              },
+                          // Search Input Field
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16.w),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.location_on,
+                                  color: AppColors.tomatoRed,
+                                  size: 24.sp,
+                                ),
+                                Expanded(
+                                  child: TextField(
+                                    controller: searchController,
+                                    cursorColor: AppColors.grey700,
+                                    style: TextStyle(fontSize: 16.sp),
+                                    decoration: InputDecoration(
+                                      hintText: 'Kërkoni një vendodhje tjetër...',
+                                      hintStyle: TextStyle(
+                                        color: AppColors.grey300,
+                                        fontSize: 16.sp,
+                                      ),
+                                      contentPadding: EdgeInsets.symmetric(horizontal: 16.w), 
+                                      border: InputBorder.none,
+                                    ),
+                                    onChanged: (value) {
+                                      if (value.isEmpty) {
+                                        setState(() {
+                                          _filteredAddresses.clear();
+                                        });
+                                      } else {
+                                        _searchNewLocation(value);
+                                      }
+                                    },
+                                    onSubmitted: (value) {
+                                      _searchNewLocation(value);
+                                    },
+                                  ),
+                                ),
+                                SizedBox(width: 20.w),
+                                GestureDetector(
+                                  onTap: () {
+                                    // _searchTasker(location);   // This function needs to be implemented
+                                    _useCurrentLocation();
+                                  },
+                                  child: Icon(
+                                    Icons.search,
+                                    color: AppColors.tomatoRed,
+                                    size: 30.sp,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          Icon(
-                            Icons.search,
-                            color: AppColors.tomatoRed,
-                            size: 22.sp,
-                          ),
+                          SizedBox(height: 10.h),
+                          
+                          // Display filtered suggestions
+                          if (_filteredAddresses.isNotEmpty)
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16.w),
+                              child: SizedBox(
+                                height: 200.h,
+                                child: ListView.separated(
+                                  itemCount: _filteredAddresses.length,
+                                  itemBuilder: (context, index) {
+                                    final suggestion = _filteredAddresses[index];
+                                    return ListTile(
+                                      title: Text(
+                                        suggestion,
+                                        style: TextStyle(
+                                          fontSize: 15.sp,
+                                        ),
+                                      ),
+                                      onTap: () {
+                                        _selectLocation(suggestion);
+                                      },
+                                      contentPadding: EdgeInsets.symmetric(horizontal: 10.w), 
+                                      dense: true,
+                                      visualDensity: VisualDensity.compact,
+                                    );
+                                  },
+                                  separatorBuilder: (context, index) {
+                                    return const Divider(
+                                      color: AppColors.grey100,
+                                      thickness: 1.0,
+                                      height: 1.0,
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
                         ],
-                      ),
+                      )
                     ),
             ),
             SizedBox(height: 20.h),
@@ -471,21 +571,21 @@ Widget _buildSearchSection() {
                   SizedBox(height: 8.h),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                      Text(
+                        '5',
+                        style: TextStyle(
+                          fontSize: 18.sp,
+                          color: AppColors.grey700,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(width: 4.w),
                       Icon(
                         Icons.star,
                         color: Colors.amber,
                         size: 18.sp,
-                      ),
-                      SizedBox(width: 4.w),
-                      Text(
-                        '5',
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          color: AppColors.grey700,
-                          fontWeight: FontWeight.w500,
-                        ),
                       ),
                       SizedBox(width: 4.w),
                       Text(

@@ -18,80 +18,42 @@ class TaskerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(16.w),
-      margin: EdgeInsets.symmetric(vertical: 8.h),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(8.r),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withOpacity(0.1),
-            offset: const Offset(0, 4),
-            blurRadius: 6,
-            spreadRadius: 1,
-          ),
-        ],
+      padding: EdgeInsets.all(32.w),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.white, AppColors.grey200],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Column(
-                children: [
-                  CircleAvatar(
-                    backgroundImage: AssetImage(tasker.profileImage),
-                    radius: 35.r,
-                  ),
-                  SizedBox(height: 10.h),
-                  if (tasker.isSuperPunetor) ...[
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
-                      decoration: BoxDecoration(
-                        color: AppColors.tomatoRed.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6.r),
-                        border: Border.all(color: AppColors.tomatoRed, width: 1),
-                      ),
-                      child: Row(
-                        children: [
-                          Text(
-                            'Super Punëtor',
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              color: AppColors.grey700,
-                            ),
-                          ),
-                          Icon(
-                            Icons.military_tech,
-                            color: AppColors.tomatoRed,
-                            size: 18.sp,
-                          ),
-                          SizedBox(width: 4.w),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
+              CircleAvatar(
+                backgroundImage: AssetImage(tasker.profileImage),
+                radius: 40.r,
               ),
-              SizedBox(width: 15.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          tasker.fullName,
-                          style: TextStyle(
-                            fontSize: 20.sp,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.grey700,
-                          ),
+              SizedBox(width: 20.w),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Text(
+                        tasker.fullName,
+                        style: TextStyle(
+                          fontSize: 20.sp,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.grey700,
                         ),
-                        IconButton(
+                      ),
+                      tasker.isFavorite
+                      ? IconButton(
                           icon: Icon(
                             Icons.favorite,
                             color: AppColors.tomatoRed,
@@ -99,90 +61,117 @@ class TaskerCard extends StatelessWidget {
                           ),
                           onPressed: onRemove,
                         )
-                      ],
-                    ),
-                    SizedBox(height: 5.h),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.star,
-                          color: AppColors.tomatoRed,
-                          size: 16.sp,
+                      : const SizedBox.shrink(),
+                      SizedBox(width: 20.w),
+                      RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: '2000 ',
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                color: AppColors.tomatoRed,
+                              ),
+                            ),
+                            TextSpan(
+                              text: 'lek/ora',
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                color: AppColors.grey700,
+                              ),
+                            ),
+                          ],
                         ),
-                        SizedBox(width: 4.w),
-                        Text(
-                          '${tasker.rating} (227 vleresime)',
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.star,
+                        color: AppColors.tomatoRed,
+                        size: 16.sp,
+                      ),
+                      SizedBox(width: 4.w),
+                      Text(
+                        '${tasker.rating} (27 vleresime)',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: '23 montime mobiliesh ',
                           style: TextStyle(
                             fontSize: 14.sp,
-                            color: Colors.grey[600],
+                            color: AppColors.tomatoRed,
+                          ),
+                        ),
+                        TextSpan(
+                          text: 'te perfunduara',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: AppColors.grey700,
                           ),
                         ),
                       ],
                     ),
-                    SizedBox(height: 10.h),
-                    RichText(
-                      text: TextSpan(
-                        children: [
-                          TextSpan(
-                            text: '223 montime mobiliesh ',
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              color: AppColors.tomatoRed,
-                            ),
-                          ),
-                          TextSpan(
-                            text: 'te perfunduara',
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              color: AppColors.grey700,
-                            ),
-                          ),
-                        ],
-                      ),
+                  ),
+                  SizedBox(height: 5.h),
+                  Text(
+                    '47 pune ne total',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: AppColors.grey700,
                     ),
-                    SizedBox(height: 5.h),
-                    Text(
-                      '447 pune ne total',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: AppColors.grey700,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),
           SizedBox(height: 20.h),
-          Text(
-            tasker.bio,
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: Colors.grey[600],
+          Container(
+            padding: EdgeInsets.all(12.w),
+
+            decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [AppColors.grey200, AppColors.grey300],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
             ),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-          ),
-          SizedBox(height: 10.h),
-          TextButton.icon(
-            onPressed: onViewProfile,
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.tomatoRed,
-              padding: EdgeInsets.zero,
+            borderRadius: BorderRadius.circular(8.r),
             ),
-            icon: const Icon(
-              Icons.person, 
-              color: AppColors.grey700,
-              size: 16,
-              ),
-            label: Text(
-              'Shiko profilin',
-              style: TextStyle(
-                color: AppColors.tomatoRed,
-                fontSize: 16.sp,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  tasker.bio,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: AppColors.grey700,
+                  ),
+                  maxLines: 2, 
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 5.h),
+                GestureDetector(
+                  onTap: onViewProfile,
+                  child: Text(
+                    'Shiko Profilin',
+                    style: TextStyle(
+                      color: AppColors.tomatoRed,
+                      fontSize: 14.sp,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
+          )
         ],
       ),
     );
