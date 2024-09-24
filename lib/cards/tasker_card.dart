@@ -140,7 +140,7 @@ class TaskerCard extends StatelessWidget {
 
             decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [AppColors.grey200, AppColors.grey300],
+              colors: [AppColors.grey200, AppColors.grey250],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),

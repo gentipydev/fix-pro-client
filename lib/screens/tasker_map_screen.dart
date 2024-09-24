@@ -34,9 +34,9 @@ class TaskerMapScreenState extends State<TaskerMapScreen> {
     _loadCustomMarker();
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final mapProvider = Provider.of<MapProvider>(context, listen: false);
-      mapProvider.createRoute();
-      _startTaskerMovement(mapProvider.polylines.first.points);
+      // final mapProvider = Provider.of<MapProvider>(context, listen: false);
+      // mapProvider.createRoute();
+      // _startTaskerMovement(mapProvider.polylines.first.points);
     });
   }
 

@@ -53,6 +53,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+    <string>Your location is needed to show your current position on the map.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+    <string>Your location is needed to track your position even when the app is in the background.</string>
 	<key>GMSApiKey</key>
 	<string>AIzaSyDTsA-ao5QZRG8ZDb0O3RxRlk2mytT1wGo</string>
 </dict>

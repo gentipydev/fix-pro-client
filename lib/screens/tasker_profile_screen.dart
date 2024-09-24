@@ -18,6 +18,7 @@ class TaskerProfileScreen extends StatefulWidget {
 class TaskerProfileScreenState extends State<TaskerProfileScreen> {
   bool isLoadingAccept = false; 
   bool isLoadingReject = false; 
+  bool _showAllReviews = false;
 
   void _handleAcceptTask() async {
     setState(() {
@@ -470,7 +471,7 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
           Row(
             children: [
               Text(
-                '4.9',
+                '5.0',
                 style: TextStyle(
                   fontSize: 28.sp,
                   fontWeight: FontWeight.bold,
@@ -491,7 +492,7 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
                   ),
                   SizedBox(height: 4.h),
                   Text(
-                    '48 vlerësime',
+                    '3 vlerësime',
                     style: TextStyle(fontSize: 12.sp, color: AppColors.grey700),
                   ),
                 ],
@@ -499,34 +500,49 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
             ],
           ),
           SizedBox(height: 16.h),
-          _buildRatingBar(5, 46),
-          _buildRatingBar(4, 2),
+          _buildRatingBar(5, 3),
+          _buildRatingBar(4, 0),
           _buildRatingBar(3, 0),
           _buildRatingBar(2, 0),
           _buildRatingBar(1, 0),
           SizedBox(height: 16.h),
           const Divider(),
           SizedBox(height: 16.h),
+          
+          // Show the first two reviews always
           _buildReview(
             'Harriet',
             '27 Shkurt, 2023',
             'Jam shumë e kënaqur me riparimin e lavatriçes time! Gentiani ishte shumë profesionist dhe i saktë. Do ta rekomandoja patjetër!',
-            'assets/images/tasker2.jpg',
+            'assets/images/client2.png',
           ),
           SizedBox(height: 16.h),
           _buildReview(
             'Aurora',
             '25 Janar, 2023',
             'Punëtor i mrekullueshëm! Ai e bëri montimin e mobilieve shumë të lehtë dhe i sqaroi të gjitha detajet në mënyrë të thjeshtë.',
-            'assets/images/tasker4.jpg',
+            'assets/images/client4.png',
           ),
+          
+          if (_showAllReviews) ...[
+            SizedBox(height: 16.h),
+            _buildReview(
+              'Bashkim',
+              '12 Dhjetor, 2022',
+              'Shërbim i shkëlqyer! Do të thërras patjetër përsëri për riparime të tjera. Shumë profesional dhe i sjellshëm.',
+              'assets/images/client6.png',
+            ),
+          ],
+          
           SizedBox(height: 8.h),
           TextButton(
             onPressed: () {
-              // Add your onPressed action here
+              setState(() {
+                _showAllReviews = !_showAllReviews;
+              });
             },
             child: Text(
-              "Shiko te gjitha...",
+              _showAllReviews ? "Trego me pak..." : "Shiko te gjitha...",
               style: TextStyle(
                 color: AppColors.tomatoRed,
                 fontSize: 12.sp,
@@ -666,7 +682,7 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
         SizedBox(width: 8.w),
         Expanded(
           child: LinearProgressIndicator(
-            value: reviewsCount / 50,
+            value: reviewsCount / 3,
             backgroundColor: Colors.grey[300],
             color: AppColors.tomatoRed,
             minHeight: 8.h,

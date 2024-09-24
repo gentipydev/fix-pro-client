@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:location/location.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:lottie/lottie.dart' as lottie;
@@ -22,13 +23,13 @@ class SearchScreen extends StatefulWidget {
   SearchScreenState createState() => SearchScreenState();
 }
 
-class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixin {
+class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixin, WidgetsBindingObserver {
   Logger logger = Logger();
   GoogleMapController? mapController;
   Set<Marker> markers = {};
   String _statusText = 'Këtu mund të përdorni vendodhjen tuaj aktuale,\nose adresën se ku dëshironi që të kryhet puna';
-  LatLng currentLocation = const LatLng(41.332918, 19.854820);
-  LatLng taskerPosition = const LatLng(41.333688, 19.846087);
+  LatLng? currentLocation;
+  LatLng? taskerPosition;
   BitmapDescriptor? currentLocationIcon;
   BitmapDescriptor? taskerIcon;
   late AnimationController _controller;
@@ -36,6 +37,9 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
   bool _onTaskAcceptedCalled = false;
   List<String> _filteredAddresses = [];
   final TextEditingController searchController = TextEditingController();
+  bool _mapInteractionDisabled = false;
+  bool _isWaiting = false;
+  bool _isAddressSelected = false;
 
   @override
   void initState() {
@@ -54,15 +58,157 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
       curve: Curves.easeInOut,
     ));
 
-    _loadAndAddCurrentLocationMarker();
+    _getCurrentLocationAndInitializeMap();
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
     mapController?.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
-  
+
+  // Lifecycle observer to handle app resume
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isWaiting) {
+      _restartWaitTimer(); 
+    }
+  }
+
+  // Disable map gestures when needed
+  void _toggleMapInteraction(bool disable) {
+    setState(() {
+      _mapInteractionDisabled = disable;
+    });
+  }
+
+  // Trigger the animation and center the map on the marker
+  Future<void> _useCurrentLocation() async {
+    final taskState = Provider.of<TaskStateProvider>(context, listen: false);
+    taskState.setLocationSelected(true);
+    taskState.setShowAnimation(true);
+
+    setState(() {
+      _statusText = 'Kërkesa i është dërguar profesionistit më të afërt\nJu lutem prisni konfirmimin nga ana e tij...';
+      _isWaiting = true;
+    });
+
+    _centerMapOnMarker(currentLocation!);
+    _toggleMapInteraction(true); // Disable map gestures
+
+    // Generate a fake tasker location near the current location
+    LatLng fakeTaskerLocation = _generateFakeTaskerLocation(currentLocation!);
+
+
+    // Start the 10-second countdown
+    Future.delayed(const Duration(seconds: 10), () {
+      if (!mounted) return;
+      setState(() {
+        _statusText = "Urime! Ky profesionist ka pranuar punen tuaj\nJu mund ta pranoni punen direkt ose pasi keni pare profilin e tij mund ta pranoni apo refuzoni atë...";
+        _isWaiting = false;
+      });
+
+      // Fetch and draw the polyline between user and fake tasker location
+      final mapProvider = Provider.of<MapProvider>(context, listen: false);
+      mapProvider.fetchRouteFromOSRMApi(currentLocation!, fakeTaskerLocation);
+      LatLng centralPoint = _findCentralPoint(currentLocation!, fakeTaskerLocation);
+
+      taskState.setShowProfileContainer(true);
+      taskState.setShowAnimation(false);
+      _toggleMapInteraction(false); // Re-enable map gestures
+
+      // Create the route and load tasker marker
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadTaskerMarker(fakeTaskerLocation);
+
+        // Center the map
+        _centerMapOnMarker(centralPoint);
+      });
+    });
+  }
+
+  Future<void> _performSearch(String address) async {
+    try {
+      // Fetch LatLng for the provided address
+      LatLng addressLocation = await Provider.of<MapProvider>(context, listen: false).getLatLngFromAddress(address);
+
+      // Similar to _useCurrentLocation but using the searched location
+      final taskState = Provider.of<TaskStateProvider>(context, listen: false);
+      taskState.setLocationSelected(true);
+      taskState.setShowAnimation(true);
+
+      setState(() {
+        _statusText = 'Kërkesa i është dërguar profesionistit më të afërt\nJu lutem prisni konfirmimin nga ana e tij...';
+        _isWaiting = true;
+      });
+
+      // Center the map on the found location
+      _centerMapOnMarker(addressLocation);
+      _toggleMapInteraction(true); // Disable map gestures
+
+      // Generate a fake tasker location near the current location
+      LatLng fakeTaskerLocation = _generateFakeTaskerLocation(addressLocation);
+
+      // Start the 10-second countdown
+      Future.delayed(const Duration(seconds: 10), () {
+        if (!mounted) return;
+        setState(() {
+          _statusText = "Urime! Ky profesionist ka pranuar punen tuaj\nJu mund ta pranoni punen direkt ose pasi keni pare profilin e tij mund ta pranoni apo refuzoni atë...";
+          _isWaiting = false;
+        });
+
+        // Fetch and draw the polyline between user and fake tasker location
+        final mapProvider = Provider.of<MapProvider>(context, listen: false);
+        mapProvider.fetchRouteFromOSRMApi(addressLocation, fakeTaskerLocation);
+        LatLng centralPoint = _findCentralPoint(addressLocation, fakeTaskerLocation);
+        
+        taskState.setShowProfileContainer(true);
+        taskState.setShowAnimation(false);
+        _toggleMapInteraction(false); // Re-enable map gestures
+
+        // Create the route and load tasker marker
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _loadTaskerMarker(fakeTaskerLocation);
+
+          // Center the map
+          _centerMapOnMarker(centralPoint);
+        });
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nuk u gjet vendodhja. Ju lutem provoni përsëri.'))
+      );
+    }
+  }
+
+  // Function to generate a fake tasker location near the current location
+  LatLng _generateFakeTaskerLocation(LatLng currentLocation) {
+    double offsetLat = 0.0027;
+
+    double offsetLng = 0.0035;
+
+    return LatLng(currentLocation.latitude + offsetLat, currentLocation.longitude + offsetLng);
+  }
+
+  // Function to find the midpoint between two LatLng objects
+  LatLng _findCentralPoint(LatLng point1, LatLng point2) {
+    double midLat = (point1.latitude + point2.latitude) / 2;
+    double midLng = (point1.longitude + point2.longitude) / 2;
+
+    return LatLng(midLat, midLng);
+  }
+
+  // Restart the 10-second countdown when the app resumes
+  void _restartWaitTimer() {
+    setState(() {
+      _statusText = 'Kërkesa i është dërguar profesionistit më të afërt\nJu lutem prisni konfirmimin nga ana e tij...';
+      _isWaiting = true;
+    });
+    _useCurrentLocation();
+  }
+
   // Center the map on the current location
   void _centerMapOnMarker(LatLng location) {
     if (mapController != null) {
@@ -77,48 +223,10 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
     }
   }
 
-  // Trigger the animation and center the map on the marker
-  void _useCurrentLocation() {
-    final taskState = Provider.of<TaskStateProvider>(context, listen: false);
-
-    taskState.setLocationSelected(true);
-    taskState.setShowAnimation(true);
-
-    setState(() {
-      _statusText = 'Kërkesa i është dërguar profesionistit më të afërt\nJu lutem prisni konfirmimin nga ana e tij...';
-    });
-
-    // Center the map on the current location
-    _centerMapOnMarker(currentLocation);
-
-    // Wait for 10 seconds and then update the status and show profile container
-    Future.delayed(const Duration(seconds: 10), () {
-      setState(() {
-        _statusText = "Urime! Ky profesionist ka pranuar punen tuaj\nJu mund ta pranoni punen direkt ose pasi keni pare profilin e tij mund ta pranoni apo refuzoni atë...";
-      });
-
-      taskState.setShowProfileContainer(true);
-      taskState.setShowAnimation(false);
-
-      // After the state change, create the route
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final mapProvider = Provider.of<MapProvider>(context, listen: false);
-
-        // Create route polyline and load tasker marker
-        mapProvider.createRoute();
-        _loadTaskerMarker();
-
-        // Center the map to tasker’s position
-        LatLng centerLocation = const LatLng(41.329046, 19.849708);
-        _centerMapOnMarker(centerLocation);
-      });
-    });
-  }
-
   void _searchNewLocation(String query) {
     logger.d('Searching for new location: $query');
     setState(() {
-      _filteredAddresses = fakeAddresses.where((address) =>
+      _filteredAddresses = simplifiedAddresses.where((address) =>
               address.toLowerCase().contains(query.toLowerCase())).toList();
     });
   }
@@ -127,14 +235,15 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
     logger.d('Location selected: $address');
     setState(() {
       searchController.text = address;
+      _isAddressSelected = true;
       _filteredAddresses.clear();
     });
   }
 
-  Future<void> _loadTaskerMarker() async {
+  Future<void> _loadTaskerMarker(LatLng taskerPosition) async {
     // Load tasker icon
     final taskerIconLoaded = await BitmapDescriptor.asset(
-      const ImageConfiguration(size: Size(80, 80)),
+      const ImageConfiguration(size: Size(90, 90)),
       'assets/images/tasker3.png',
     );
 
@@ -157,29 +266,84 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
         ),
         Marker(
           markerId: const MarkerId('currentLocation'),
-          position: currentLocation,
+          position: currentLocation!,
           icon: currentLocationIcon!,
         ),
       };
     });
   }
 
-  Future<void> _loadAndAddCurrentLocationMarker() async {
-    final icon = await BitmapDescriptor.asset(
-      const ImageConfiguration(size: Size(80, 80)),
-      'assets/images/tasker4.png',
-    );
+  Future<void> _getCurrentLocationAndInitializeMap() async {
+    try {
+      // Get the current location from the phone's GPS
+      LatLng currentPosition = await getCurrentLocation();
 
-    setState(() {
-      currentLocationIcon = icon;
-      markers.add(
-        Marker(
-          markerId: const MarkerId('currentLocation'),
-          position: currentLocation,
-          icon: currentLocationIcon!,
-        ),
+      // Update the map and marker for the current location
+      final icon = await BitmapDescriptor.asset(
+        const ImageConfiguration(size: Size(90, 90)),
+        'assets/images/tasker4.png',
       );
-    });
+
+      setState(() {
+        currentLocation = currentPosition;
+        currentLocationIcon = icon;
+
+        // Update the camera position on the map
+        mapController?.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+              target: currentLocation!,
+              zoom: 15.5,
+            ),
+          ),
+        );
+
+        // Add marker for current location
+        markers.add(
+          Marker(
+            markerId: const MarkerId('currentLocation'),
+            position: currentLocation!,
+            icon: currentLocationIcon!,
+          ),
+        );
+      });
+    } catch (e) {
+      logger.e('Error getting current location: $e');
+    }
+  }
+
+  // Function to get the current location of the user
+  Future<LatLng> getCurrentLocation() async {
+    Location location = Location();
+    bool serviceEnabled;
+    PermissionStatus permissionGranted;
+    LocationData locationData;
+
+    // Check if location services are enabled
+    serviceEnabled = await location.serviceEnabled();
+    if (!serviceEnabled) {
+      serviceEnabled = await location.requestService();
+      if (!serviceEnabled) {
+        // Location services are not enabled, throw an error
+        throw Exception('Location services are disabled.');
+      }
+    }
+
+    // Check for location permissions
+    permissionGranted = await location.hasPermission();
+    if (permissionGranted == PermissionStatus.denied) {
+      permissionGranted = await location.requestPermission();
+      if (permissionGranted != PermissionStatus.granted) {
+        // Permissions are denied, throw an error
+        throw Exception('Location permissions are denied.');
+      }
+    }
+
+    // Get the current location of the user
+    locationData = await location.getLocation();
+
+    // Return the current location as a LatLng object
+    return LatLng(locationData.latitude!, locationData.longitude!);
   }
 
   @override
@@ -210,101 +374,110 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
 Widget build(BuildContext context) {
   final taskState = Provider.of<TaskStateProvider>(context);
 
-  return Scaffold(
-    body: Stack(
-      children: [
-        // Google Map Layer
-        Positioned.fill(
-          child: Consumer<MapProvider>(
-            builder: (context, mapProvider, child) {
-              return GoogleMap(
-                padding: EdgeInsets.only(
-                  top: 90,
-                  bottom: taskState.showProfileContainer ? 250.h : 0,
-                ),
-                initialCameraPosition: CameraPosition(
-                  target: currentLocation,
-                  zoom: 15.5,
-                ),
-                onMapCreated: (GoogleMapController controller) {
-                  mapController = controller;
-                  mapProvider.loadMapStyle(context);
-                },
-                style: mapProvider.mapStyle,
-                polylines: mapProvider.polylines,
-                markers: markers,
-                zoomControlsEnabled: false,
-              );
-            },
-          ),
-        ),
-
-        // Shooting Icons Animation
-        if (!taskState.isLocationSelected)
-          const Positioned(
-            top: 120,
-            left: 0,
-            right: 0,
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: ShootingIconsAnimation(),
+  return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+      debugPrint('Pop was invoked but prevented');
+      },
+    child: Scaffold(
+      body: Stack(
+        children: [
+          // Google Map Layer
+          Positioned.fill(
+            child: Consumer<MapProvider>(
+              builder: (context, mapProvider, child) {
+                return GoogleMap(
+                  padding: EdgeInsets.only(
+                    top: 90,
+                    bottom: taskState.showProfileContainer ? 250.h : 0,
+                  ),
+                  initialCameraPosition: CameraPosition(
+                    target: currentLocation ?? const LatLng(41.332918, 19.854820),
+                    zoom: 15.5,
+                  ),
+                  onMapCreated: (GoogleMapController controller) {
+                    mapController = controller;
+                    mapProvider.loadMapStyle(context);
+                  },
+                  style: mapProvider.mapStyle,
+                  polylines: mapProvider.polylines,
+                  markers: markers,
+                  zoomControlsEnabled: false,
+                  scrollGesturesEnabled: !_mapInteractionDisabled, 
+                  zoomGesturesEnabled: !_mapInteractionDisabled,
+                  rotateGesturesEnabled: !_mapInteractionDisabled,
+                );
+              },
             ),
           ),
-
-        if (taskState.showAnimation)
-          Positioned.fill(
-            child: Align(
-              alignment: Alignment.center,
-              child: Stack(
+    
+          // Shooting Icons Animation
+          if (!taskState.isLocationSelected)
+            const Positioned(
+              top: 120,
+              left: 0,
+              right: 0,
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ShootingIconsAnimation(),
+              ),
+            ),
+    
+          if (taskState.showAnimation)
+            Positioned.fill(
+              child: Align(
                 alignment: Alignment.center,
-                children: [
-                  Opacity(
-                    opacity: 0.6,
-                    child: ClipOval(
-                      child: SizedBox(
-                        height: 400.w,
-                        width: 400.w,
-                        child: lottie.Lottie.asset(
-                          'assets/animations/circular_dot_animation.json',
-                          repeat: true,
-                          fit: BoxFit.cover,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Opacity(
+                      opacity: 0.6,
+                      child: ClipOval(
+                        child: SizedBox(
+                          height: 400.w,
+                          width: 400.w,
+                          child: lottie.Lottie.asset(
+                            'assets/animations/circular_dot_animation.json',
+                            repeat: true,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  Opacity(
-                    opacity: 0.3,
-                    child: SizedBox(
-                      height: 300.w,
-                      width: 300.w,
-                      child: lottie.Lottie.asset(
-                        'assets/animations/radar_searching.json',
-                        repeat: true,
-                        fit: BoxFit.contain,
+                    Opacity(
+                      opacity: 0.3,
+                      child: SizedBox(
+                        height: 300.w,
+                        width: 300.w,
+                        child: lottie.Lottie.asset(
+                          'assets/animations/radar_searching.json',
+                          repeat: true,
+                          fit: BoxFit.contain,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: 30.h),
+              _buildSearchSection(),
+              const Expanded(child: SizedBox.shrink()),
+            ],
           ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 30.h),
-            _buildSearchSection(),
-            const Expanded(child: SizedBox.shrink()),
-          ],
-        ),
-        AnimatedPositioned(
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-          left: 0,
-          right: 0,
-          bottom: taskState.showProfileContainer ? 0 : -400.h,
-          child: _buildProfileContainer(),
-        ),
-      ],
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+            left: 0,
+            right: 0,
+            bottom: taskState.showProfileContainer ? 0 : -400.h,
+            child: _buildProfileContainer(),
+          ),
+        ],
+      ),
     ),
   );
 }
@@ -387,7 +560,7 @@ Widget build(BuildContext context) {
                                 Icon(
                                   Icons.location_on,
                                   color: AppColors.tomatoRed,
-                                  size: 24.sp,
+                                  size: 26.sp,
                                 ),
                                 Expanded(
                                   child: TextField(
@@ -404,13 +577,14 @@ Widget build(BuildContext context) {
                                       border: InputBorder.none,
                                     ),
                                     onChanged: (value) {
-                                      if (value.isEmpty) {
-                                        setState(() {
+                                      setState(() {
+                                        _isAddressSelected = false;  // Reset flag when user types
+                                        if (value.isEmpty) {
                                           _filteredAddresses.clear();
-                                        });
-                                      } else {
-                                        _searchNewLocation(value);
-                                      }
+                                        } else {
+                                          _searchNewLocation(value);
+                                        }
+                                      });
                                     },
                                     onSubmitted: (value) {
                                       _searchNewLocation(value);
@@ -420,8 +594,11 @@ Widget build(BuildContext context) {
                                 SizedBox(width: 20.w),
                                 GestureDetector(
                                   onTap: () {
-                                    // _searchTasker(location);   // This function needs to be implemented
-                                    _useCurrentLocation();
+                                    if (_isAddressSelected) {
+                                      _performSearch(searchController.text);
+                                    } else {
+                                      logger.d("User needs to select an address from the suggestion list");
+                                    }
                                   },
                                   child: Icon(
                                     Icons.search,
@@ -479,27 +656,27 @@ Widget build(BuildContext context) {
               duration: const Duration(milliseconds: 500),
               opacity: taskState.isLocationSelected ? 0 : 1,
               child: taskState.isLocationSelected
-                  ? const SizedBox()
-                  : GestureDetector(
-                      onTap: _useCurrentLocation,
-                      child: Column(
-                        children: [
-                          Text(
-                            'Përdor Vendodhjen Aktuale',
-                            style: GoogleFonts.roboto(
-                              color: AppColors.white,
-                              fontSize: 16.sp,
-                            ),
-                          ),
-                          SizedBox(height: 5.h),
-                          Icon(
-                            CupertinoIcons.chevron_down,
+                ? const SizedBox()
+                : GestureDetector(
+                    onTap: _useCurrentLocation,
+                    child: Column(
+                      children: [
+                        Text(
+                          'Përdor Vendodhjen Aktuale',
+                          style: GoogleFonts.roboto(
                             color: AppColors.white,
-                            size: 24.sp,
+                            fontSize: 16.sp,
                           ),
-                        ],
-                      ),
+                        ),
+                        SizedBox(height: 5.h),
+                        Icon(
+                          CupertinoIcons.chevron_down,
+                          color: AppColors.white,
+                          size: 24.sp,
+                        ),
+                      ],
                     ),
+                  ),
             ),
           ],
         ),

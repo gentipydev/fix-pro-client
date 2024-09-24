@@ -28,8 +28,8 @@ class TaskDetailsScreenState extends State<TaskDetailsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final mapProvider = Provider.of<MapProvider>(context, listen: false);
-      mapProvider.createRoute();
+      // final mapProvider = Provider.of<MapProvider>(context, listen: false);
+      // mapProvider.createRoute();
     });
   }
 

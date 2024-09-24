@@ -1,8 +1,14 @@
+import 'dart:convert';
+
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:logger/logger.dart';
+import 'package:http/http.dart' as http;
 
 class MapProvider with ChangeNotifier {
+  Logger logger = Logger();
   String? _mapStyle;
   String? get mapStyle => _mapStyle;
 
@@ -14,88 +20,48 @@ class MapProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void createRoute() {
-  List<LatLng> polylineCoordinates = [
-    const LatLng(41.333688, 19.846087),
-    const LatLng(41.333705, 19.846250), 
-    const LatLng(41.333723, 19.846414),
-    const LatLng(41.333740, 19.846577), 
-    const LatLng(41.333758, 19.846741),
-    const LatLng(41.333775, 19.846904), 
-    const LatLng(41.333793, 19.847068),
-    const LatLng(41.333811, 19.847231), 
-    const LatLng(41.333829, 19.847395),
-    const LatLng(41.333842, 19.847634), 
-    const LatLng(41.333856, 19.847873),
-    const LatLng(41.333869, 19.848112), 
-    const LatLng(41.333883, 19.848350),
-    const LatLng(41.333896, 19.848589), 
-    const LatLng(41.333910, 19.848828),
-    const LatLng(41.333923, 19.849067), 
-    const LatLng(41.333937, 19.849306),
-    const LatLng(41.333905, 19.849324), 
-    const LatLng(41.333872, 19.849343),
-    const LatLng(41.333840, 19.849361), 
-    const LatLng(41.333808, 19.849379),
-    const LatLng(41.333776, 19.849395), 
-    const LatLng(41.333744, 19.849411),
-    const LatLng(41.333712, 19.849427), 
-    const LatLng(41.333680, 19.849443),
-    const LatLng(41.333656, 19.849480), 
-    const LatLng(41.333632, 19.849518),
-    const LatLng(41.333608, 19.849555), 
-    const LatLng(41.333585, 19.849593),
-    const LatLng(41.333577, 19.849631), 
-    const LatLng(41.333570, 19.849669),
-    const LatLng(41.333563, 19.849708), 
-    const LatLng(41.333556, 19.849746),
-    const LatLng(41.333552, 19.849751), 
-    const LatLng(41.333548, 19.849755),
-    const LatLng(41.333545, 19.849760), 
-    const LatLng(41.333541, 19.849765),
-    const LatLng(41.333497, 19.849811), 
-    const LatLng(41.333453, 19.849857),
-    const LatLng(41.333409, 19.849903), 
-    const LatLng(41.333365, 19.849950),
-    const LatLng(41.333321, 19.849996), 
-    const LatLng(41.333277, 19.850042),
-    const LatLng(41.333233, 19.850089), 
-    const LatLng(41.333189, 19.850135),
-    const LatLng(41.333151, 19.850215), 
-    const LatLng(41.333113, 19.850294),
-    const LatLng(41.333074, 19.850374), 
-    const LatLng(41.333036, 19.850453),
-    const LatLng(41.332998, 19.850532), 
-    const LatLng(41.332959, 19.850611),
-    const LatLng(41.332921, 19.850691), 
-    const LatLng(41.332883, 19.850770),
-    const LatLng(41.332872, 19.851029), 
-    const LatLng(41.332860, 19.851289),
-    const LatLng(41.332848, 19.851548), 
-    const LatLng(41.332836, 19.851808),
-    const LatLng(41.332824, 19.852068), 
-    const LatLng(41.332812, 19.852327),
-    const LatLng(41.332801, 19.852587), 
-    const LatLng(41.332789, 19.852846),
-    const LatLng(41.332805, 19.853093), 
-    const LatLng(41.332821, 19.853339),
-    const LatLng(41.332837, 19.853586), 
-    const LatLng(41.332853, 19.853833),
-    const LatLng(41.332869, 19.854080), 
-    const LatLng(41.332885, 19.854327),
-    const LatLng(41.332902, 19.854573), 
-    const LatLng(41.332918, 19.854820),
-  ];
+  Future<void> fetchRouteFromOSRMApi(LatLng start, LatLng end) async {
+    try {
+      List<LatLng> routeCoordinates = await getRouteCoordinates(start, end);
+      _polylines = {
+        Polyline(
+          polylineId: const PolylineId('route_from_api'),
+          points: routeCoordinates,
+          color: AppColors.black,
+          width: 3,
+        ),
+      };
+      notifyListeners();
+    } catch (e) {
+      logger.e('Failed to fetch route: $e');
+    }
+  }
 
-    _polylines = {
-      Polyline(
-        polylineId: const PolylineId('route'),
-        points: polylineCoordinates,
-        color: AppColors.black,
-        width: 3,
-      ),
-    };
-    notifyListeners();
+  Future<List<LatLng>> getRouteCoordinates(LatLng start, LatLng end) async {
+    final String osrmUrl =
+        'http://router.project-osrm.org/route/v1/driving/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?overview=full&geometries=polyline';
+
+    final response = await http.get(Uri.parse(osrmUrl));
+
+    if (response.statusCode == 200) {
+      final decodedJson = jsonDecode(response.body);
+      final polyline = decodedJson['routes'][0]['geometry'];
+      return decodePolyline(polyline);
+    } else {
+      throw Exception('Failed to fetch route');
+    }
+  }
+
+  List<LatLng> decodePolyline(String polylineString) {
+    PolylinePoints polylinePoints = PolylinePoints();
+
+    // Decode the polyline string into a list of PointLatLng objects
+    List<PointLatLng> result = polylinePoints.decodePolyline(polylineString);
+
+    // Convert PointLatLng to LatLng for Google Maps
+    List<LatLng> coordinates = result.map((point) => LatLng(point.latitude, point.longitude)).toList();
+
+    return coordinates;
   }
 
   // Method to update polyline points dynamically
@@ -115,5 +81,26 @@ class MapProvider with ChangeNotifier {
   void clearPolylines() {
     _polylines = {};
     notifyListeners();
+  }
+
+    // Get LatLng from Address using OpenStreetMap Nominatim API
+  Future<LatLng> getLatLngFromAddress(String address) async {
+    final String url = 'https://nominatim.openstreetmap.org/search?q=${Uri.encodeComponent(address)}&format=json&limit=1';
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+
+      if (data.isNotEmpty) {
+        final double latitude = double.parse(data[0]['lat']);
+        final double longitude = double.parse(data[0]['lon']);
+        return LatLng(latitude, longitude);
+      } else {
+        throw Exception('No results found for this address');
+      }
+    } else {
+      throw Exception('Failed to fetch coordinates');
+    }
   }
 }
