@@ -1,4 +1,5 @@
 import 'package:fit_pro_client/screens/favourite_taskers_screen.dart';
+import 'package:fit_pro_client/screens/profile_screen.dart';
 import 'package:fit_pro_client/screens/tasks_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fit_pro_client/providers/taskers_provider.dart';
@@ -22,7 +23,7 @@ class HomeScreenState extends State<HomeScreen> {
     const HomeContent(),
     const TasksScreen(),
     const FavouriteTaskersScreen(),
-    const HomeContent(),
+    const UserProfileScreen(),
   ];
 
   void _onItemTapped(int index) {

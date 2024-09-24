@@ -271,7 +271,7 @@ class TaskDetailsScreenState extends State<TaskDetailsScreen> {
                           ),
                           Padding(
                             padding: EdgeInsets.only(left: 20.w),
-                            child: ExpandableFab(
+                            child: SimpleExpandableFab(
                                 phoneNumber: widget.task.clientPhoneNumber!),
                           ),
                         ],

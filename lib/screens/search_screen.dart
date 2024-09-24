@@ -1,11 +1,11 @@
 import 'dart:async';
+import 'package:another_flushbar/flushbar.dart';
 import 'package:fit_pro_client/providers/map_provider.dart';
 import 'package:fit_pro_client/providers/task_state_provider.dart';
 import 'package:fit_pro_client/screens/tasker_profile_screen.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:fit_pro_client/utils/fake_addresses.dart';
 import 'package:fit_pro_client/widgets/custom_expandable_fab.dart';
-import 'package:fit_pro_client/widgets/custom_shooting_icon_animation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -29,6 +29,7 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
   Set<Marker> markers = {};
   String _statusText = 'Këtu mund të përdorni vendodhjen tuaj aktuale,\nose adresën se ku dëshironi që të kryhet puna';
   LatLng? currentLocation;
+  LatLng? userAddressLocation;
   LatLng? taskerPosition;
   BitmapDescriptor? currentLocationIcon;
   BitmapDescriptor? taskerIcon;
@@ -101,7 +102,6 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
     // Generate a fake tasker location near the current location
     LatLng fakeTaskerLocation = _generateFakeTaskerLocation(currentLocation!);
 
-
     // Start the 10-second countdown
     Future.delayed(const Duration(seconds: 10), () {
       if (!mounted) return;
@@ -121,7 +121,7 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
 
       // Create the route and load tasker marker
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _loadTaskerMarker(fakeTaskerLocation);
+        _loadTaskerMarkerCurrentLocation(fakeTaskerLocation);
 
         // Center the map
         _centerMapOnMarker(centralPoint);
@@ -133,6 +133,9 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
     try {
       // Fetch LatLng for the provided address
       LatLng addressLocation = await Provider.of<MapProvider>(context, listen: false).getLatLngFromAddress(address);
+      setState(() {
+        userAddressLocation = addressLocation;
+      });
 
       // Similar to _useCurrentLocation but using the searched location
       final taskState = Provider.of<TaskStateProvider>(context, listen: false);
@@ -169,10 +172,11 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
         _toggleMapInteraction(false); // Re-enable map gestures
 
         // Create the route and load tasker marker
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _loadTaskerMarker(fakeTaskerLocation);
-
-          // Center the map
+       WidgetsBinding.instance.addPostFrameCallback((_) {
+          // Load the tasker marker
+          _loadTaskerMarkerAddressLocation(fakeTaskerLocation);
+          
+          // Center the map on the central point
           _centerMapOnMarker(centralPoint);
         });
       });
@@ -240,7 +244,7 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
     });
   }
 
-  Future<void> _loadTaskerMarker(LatLng taskerPosition) async {
+  Future<void> _loadTaskerMarkerCurrentLocation(LatLng taskerPosition) async {
     // Load tasker icon
     final taskerIconLoaded = await BitmapDescriptor.asset(
       const ImageConfiguration(size: Size(90, 90)),
@@ -267,6 +271,39 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
         Marker(
           markerId: const MarkerId('currentLocation'),
           position: currentLocation!,
+          icon: currentLocationIcon!,
+        ),
+      };
+    });
+  }
+
+  Future<void> _loadTaskerMarkerAddressLocation(LatLng taskerPosition) async {
+    // Load tasker icon
+    final taskerIconLoaded = await BitmapDescriptor.asset(
+      const ImageConfiguration(size: Size(90, 90)),
+      'assets/images/tasker3.png',
+    );
+
+    // Load default user location icon
+    final currentLocationIconLoaded = BitmapDescriptor.defaultMarkerWithHue(
+      BitmapDescriptor.hueBlue,
+    );
+
+    setState(() {
+      taskerIcon = taskerIconLoaded;
+      currentLocationIcon = currentLocationIconLoaded;
+
+      // Update markers for both tasker and current location
+      markers = {
+        Marker(
+          markerId: const MarkerId('taskerLocation'),
+          position: taskerPosition,
+          icon: taskerIcon!,
+          anchor: const Offset(0.5, 0.5),
+        ),
+        Marker(
+          markerId: const MarkerId('currentLocation'),
+          position: userAddressLocation!,
           icon: currentLocationIcon!,
         ),
       };
@@ -370,16 +407,135 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
     });
   }
 
+  void _addAddressNotification(BuildContext context) {
+    Flushbar(
+      message: "Ju lutem vendosni nje adrese",
+      duration: const Duration(seconds: 2),
+      backgroundColor: AppColors.tomatoRed,
+      flushbarPosition: FlushbarPosition.BOTTOM,
+      icon: const Icon(
+        Icons.error,
+        color: AppColors.white,
+      ),
+    ).show(context);
+  }
+
+  void _showCancelDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppColors.white,
+          contentPadding: EdgeInsets.zero,
+          insetPadding: EdgeInsets.zero,  
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15.0),
+          ),
+          titlePadding: const EdgeInsets.all(16),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Jeni i sigurt që doni të largoheni?',
+                style: TextStyle(
+                  color: AppColors.grey700,
+                  fontSize: 16.sp,
+                ),
+              ),
+              SizedBox(height: 8.h),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.warning,
+                    size: 22,
+                    color: AppColors.tomatoRed,
+                  ),
+                  SizedBox(width: 4.w),
+                  Expanded(
+                    child: Text(
+                      'Kërkesa për punë do të anullohet menjëherë',
+                      style: TextStyle(
+                        color: AppColors.tomatoRed,
+                        fontSize: 12.sp,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actionsPadding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 16.h),
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                TextButton(
+                  style: TextButton.styleFrom(
+                    backgroundColor: AppColors.grey300,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text(
+                    'Jo',
+                    style: TextStyle(
+                      color: AppColors.grey700,
+                      fontSize: 16.sp,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  style: TextButton.styleFrom(
+                    backgroundColor: AppColors.tomatoRed,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                  ),
+                  onPressed: () {
+                    // Cancel Task 
+                    Navigator.of(context).pop();
+                    Navigator.of(context).pushReplacementNamed('/home');
+                  },
+                  child: Text(
+                    'Po, jam i sigurt',
+                    style: TextStyle(
+                      color: AppColors.white,
+                      fontSize: 16.sp,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 @override
 Widget build(BuildContext context) {
   final taskState = Provider.of<TaskStateProvider>(context);
 
   return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) {
-      debugPrint('Pop was invoked but prevented');
-      },
+    canPop: false, // Prevent default back behavior
+    onPopInvoked: (didPop) {
+      final taskState = Provider.of<TaskStateProvider>(context, listen: false);
+
+      if (taskState.isAccepted) {
+        // If the task is accepted, allow the user to go back normally
+        Navigator.of(context).pop(); 
+      } else {
+        // If the task is not accepted, show the custom cancel dialog
+        _showCancelDialog(); 
+      }
+    },
     child: Scaffold(
+      appBar: AppBar(),
       body: Stack(
         children: [
           // Google Map Layer
@@ -392,7 +548,7 @@ Widget build(BuildContext context) {
                     bottom: taskState.showProfileContainer ? 250.h : 0,
                   ),
                   initialCameraPosition: CameraPosition(
-                    target: currentLocation ?? const LatLng(41.332918, 19.854820),
+                    target: currentLocation ?? const LatLng(41.3275, 19.8189),
                     zoom: 15.5,
                   ),
                   onMapCreated: (GoogleMapController controller) {
@@ -410,18 +566,6 @@ Widget build(BuildContext context) {
               },
             ),
           ),
-    
-          // Shooting Icons Animation
-          if (!taskState.isLocationSelected)
-            const Positioned(
-              top: 120,
-              left: 0,
-              right: 0,
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: ShootingIconsAnimation(),
-              ),
-            ),
     
           if (taskState.showAnimation)
             Positioned.fill(
@@ -560,7 +704,7 @@ Widget build(BuildContext context) {
                                 Icon(
                                   Icons.location_on,
                                   color: AppColors.tomatoRed,
-                                  size: 26.sp,
+                                  size: 24.sp,
                                 ),
                                 Expanded(
                                   child: TextField(
@@ -597,13 +741,14 @@ Widget build(BuildContext context) {
                                     if (_isAddressSelected) {
                                       _performSearch(searchController.text);
                                     } else {
-                                      logger.d("User needs to select an address from the suggestion list");
+                                      logger.d("heyyyy");
+                                      _addAddressNotification(context);
                                     }
                                   },
                                   child: Icon(
                                     Icons.search,
                                     color: AppColors.tomatoRed,
-                                    size: 30.sp,
+                                    size: 32.sp,
                                   ),
                                 ),
                               ],
@@ -650,7 +795,7 @@ Widget build(BuildContext context) {
                       )
                     ),
             ),
-            SizedBox(height: 20.h),
+            SizedBox(height: 40.h),
             // Use current location button sliding up
             AnimatedOpacity(
               duration: const Duration(milliseconds: 500),
