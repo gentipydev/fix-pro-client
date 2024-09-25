@@ -1,41 +1,35 @@
 import 'package:flutter/foundation.dart';
 
+enum TaskState {
+  initial,
+  searching,
+  profileView,
+  accepted,
+}
+
 class TaskStateProvider with ChangeNotifier {
-  bool _isAccepted = false;
-  bool _showAnimation = false;
+  TaskState _taskState = TaskState.initial;
   bool _isLocationSelected = false;
-  bool _showProfileContainer = false;
 
-  bool get isAccepted => _isAccepted;
-  bool get showAnimation => _showAnimation;
+  TaskState get taskState => _taskState;
   bool get isLocationSelected => _isLocationSelected;
-  bool get showProfileContainer => _showProfileContainer;
 
-  void acceptTask() {
-    _isAccepted = true;
+  // Set the task state based on user actions
+  void setTaskState(TaskState state) {
+    _taskState = state;
     notifyListeners();
   }
 
-  void setShowAnimation(bool value) {
-    _showAnimation = value;
-    notifyListeners();
-  }
-
+  // Set location selection
   void setLocationSelected(bool value) {
     _isLocationSelected = value;
     notifyListeners();
   }
 
-  void setShowProfileContainer(bool value) {
-    _showProfileContainer = value;
-    notifyListeners();
-  }
-
+  // Reset task to initial state
   void resetTask() {
-    _isAccepted = false;
-    _showAnimation = false;
+    _taskState = TaskState.initial;
     _isLocationSelected = false;
-    _showProfileContainer = false;
     notifyListeners();
   }
 }

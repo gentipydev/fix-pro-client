@@ -20,9 +20,12 @@ class MapProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> fetchRouteFromOSRMApi(LatLng start, LatLng end) async {
+  Future<LatLngBounds?> fetchRouteFromOSRMApi(LatLng start, LatLng end) async {
     try {
+      // Fetch route coordinates from OSRM API
       List<LatLng> routeCoordinates = await getRouteCoordinates(start, end);
+      
+      // Set the polyline on the map
       _polylines = {
         Polyline(
           polylineId: const PolylineId('route_from_api'),
@@ -32,8 +35,14 @@ class MapProvider with ChangeNotifier {
         ),
       };
       notifyListeners();
+
+      // Calculate bounds that include both markers and polyline
+      LatLngBounds bounds = _calculateLatLngBounds(routeCoordinates, start, end);
+      
+      return bounds;
     } catch (e) {
       logger.e('Failed to fetch route: $e');
+      return null; // Return null if fetching fails
     }
   }
 
@@ -62,6 +71,28 @@ class MapProvider with ChangeNotifier {
     List<LatLng> coordinates = result.map((point) => LatLng(point.latitude, point.longitude)).toList();
 
     return coordinates;
+  }
+
+  LatLngBounds _calculateLatLngBounds(List<LatLng> polylinePoints, LatLng startMarker, LatLng endMarker) {
+    // Initialize min/max values with the start and end marker coordinates
+    double minLat = (startMarker.latitude < endMarker.latitude) ? startMarker.latitude : endMarker.latitude;
+    double minLng = (startMarker.longitude < endMarker.longitude) ? startMarker.longitude : endMarker.longitude;
+    double maxLat = (startMarker.latitude > endMarker.latitude) ? startMarker.latitude : endMarker.latitude;
+    double maxLng = (startMarker.longitude > endMarker.longitude) ? startMarker.longitude : endMarker.longitude;
+
+    // Extend the bounds to include all polyline points
+    for (LatLng point in polylinePoints) {
+      if (point.latitude < minLat) minLat = point.latitude;
+      if (point.longitude < minLng) minLng = point.longitude;
+      if (point.latitude > maxLat) maxLat = point.latitude;
+      if (point.longitude > maxLng) maxLng = point.longitude;
+    }
+
+    // Return LatLngBounds that fits the entire polyline and markers
+    return LatLngBounds(
+      southwest: LatLng(minLat, minLng),
+      northeast: LatLng(maxLat, maxLng),
+    );
   }
 
   // Method to update polyline points dynamically

@@ -77,9 +77,8 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
 
   @override
   Widget build(BuildContext context) {
-    // Listen to the global TaskStateProvider's isAccepted state
-    final taskState = context.watch<TaskStateProvider>();
-    final isAccepted = taskState.isAccepted;
+    final taskStateProvider = context.watch<TaskStateProvider>();
+    final currentTaskState = taskStateProvider.taskState;
 
     return Container(
       color: Colors.transparent,
@@ -100,7 +99,7 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
                     width: 180.w,
                   ),
                 ),
-                // Only show expanded buttons when isExpanded is true
+                // Show expanded buttons only when expanded
                 if (animationController.value > 0)
                   Transform.translate(
                     offset: Offset.fromDirection(getRadiansFromDegree(270), degOneTranslationAnimation.value * 100),
@@ -166,24 +165,26 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
                             animate: true,
                           )
                         : Text(
-                            isAccepted ? "Kontakto" : "Prano",
+                            currentTaskState == TaskState.accepted ? "Kontakto" : "Prano",
                             style: TextStyle(
                               color: AppColors.grey700,
                               fontSize: 16.sp,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                    onClick: isAccepted ? _onContactPressed : () {
-                      context.read<TaskStateProvider>().acceptTask();
-                      setState(() {
-                        isLoading = true;
-                      });
-                      Future.delayed(const Duration(milliseconds: 1500), () {
-                        setState(() {
-                          isLoading = false;
-                        });
-                      });
-                    },
+                    onClick: currentTaskState == TaskState.accepted
+                        ? _onContactPressed
+                        : () {
+                            context.read<TaskStateProvider>().setTaskState(TaskState.accepted);
+                            setState(() {
+                              isLoading = true;
+                            });
+                            Future.delayed(const Duration(milliseconds: 1500), () {
+                              setState(() {
+                                isLoading = false;
+                              });
+                            });
+                          },
                     isLoading: isLoading,
                   ),
                 ),

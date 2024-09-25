@@ -165,7 +165,7 @@ final List<Map<String, String>> categories = [
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Përshëndetje Genti !',
+                  'Përshëndetje Alexa !',
                   style: TextStyle(
                     color: AppColors.white,
                     fontSize: 24.sp,

@@ -18,7 +18,7 @@ class TaskerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(32.w),
+      padding: EdgeInsets.all(8.w),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [AppColors.white, AppColors.grey200],
@@ -37,7 +37,7 @@ class TaskerCard extends StatelessWidget {
                 backgroundImage: AssetImage(tasker.profileImage),
                 radius: 40.r,
               ),
-              SizedBox(width: 20.w),
+              SizedBox(width: 10.w),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -45,9 +45,11 @@ class TaskerCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       Text(
-                        tasker.fullName,
+                        tasker.fullName.length > 15
+                          ? '${tasker.fullName.substring(0, 10)}...'
+                          : tasker.fullName,
                         style: TextStyle(
-                          fontSize: 20.sp,
+                          fontSize: 18.sp,
                           fontWeight: FontWeight.bold,
                           color: AppColors.grey700,
                         ),
@@ -62,21 +64,21 @@ class TaskerCard extends StatelessWidget {
                           onPressed: onRemove,
                         )
                       : const SizedBox.shrink(),
-                      SizedBox(width: 20.w),
+                      SizedBox(width: tasker.isFavorite ? 10.w : 60.w),
                       RichText(
                         text: TextSpan(
                           children: [
                             TextSpan(
                               text: '2000 ',
                               style: TextStyle(
-                                fontSize: 16.sp,
+                                fontSize: 18.sp,
                                 color: AppColors.tomatoRed,
                               ),
                             ),
                             TextSpan(
                               text: 'lek/ora',
                               style: TextStyle(
-                                fontSize: 16.sp,
+                                fontSize: 18.sp,
                                 color: AppColors.grey700,
                               ),
                             ),
@@ -90,43 +92,30 @@ class TaskerCard extends StatelessWidget {
                       Icon(
                         Icons.star,
                         color: AppColors.tomatoRed,
-                        size: 16.sp,
+                        size: 20.sp,
                       ),
                       SizedBox(width: 4.w),
                       Text(
                         '${tasker.rating} (27 vleresime)',
                         style: TextStyle(
-                          fontSize: 14.sp,
+                          fontSize: 16.sp,
                           color: Colors.grey[600],
                         ),
                       ),
                     ],
                   ),
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: '23 montime mobiliesh ',
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            color: AppColors.tomatoRed,
-                          ),
-                        ),
-                        TextSpan(
-                          text: 'te perfunduara',
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            color: AppColors.grey700,
-                          ),
-                        ),
-                      ],
+                  Text(
+                    '23 montime mobiliesh ',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      color: AppColors.tomatoRed,
                     ),
                   ),
                   SizedBox(height: 5.h),
                   Text(
                     '47 pune ne total',
                     style: TextStyle(
-                      fontSize: 14.sp,
+                      fontSize: 16.sp,
                       color: AppColors.grey700,
                     ),
                   ),
@@ -144,20 +133,20 @@ class TaskerCard extends StatelessWidget {
                 Text(
                   tasker.bio,
                   style: TextStyle(
-                    fontSize: 14.sp,
+                    fontSize: 16.sp,
                     color: AppColors.grey700,
                   ),
                   maxLines: 2, 
                   overflow: TextOverflow.ellipsis,
                 ),
                 SizedBox(height: 5.h),
-                GestureDetector(
-                  onTap: onViewProfile,
+                TextButton(
+                  onPressed: onViewProfile,
                   child: Text(
                     'Shiko Profilin',
                     style: TextStyle(
                       color: AppColors.tomatoRed,
-                      fontSize: 14.sp,
+                      fontSize: 16.sp,
                     ),
                   ),
                 ),

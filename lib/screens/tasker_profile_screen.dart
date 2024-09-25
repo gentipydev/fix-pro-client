@@ -1,6 +1,6 @@
 import 'package:fit_pro_client/providers/map_provider.dart';
 import 'package:fit_pro_client/providers/task_state_provider.dart';
-import 'package:fit_pro_client/screens/search_screen.dart';
+import 'package:fit_pro_client/screens/search_screen/search_screen.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:fit_pro_client/widgets/video_player_widget.dart';
 import 'package:flutter/material.dart';
@@ -28,7 +28,7 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
     // Simulate a network request
     await Future.delayed(const Duration(seconds: 2));
 
-    context.read<TaskStateProvider>().acceptTask();
+    context.read<TaskStateProvider>().setTaskState(TaskState.accepted);
 
     setState(() {
       isLoadingAccept = false;
@@ -79,7 +79,7 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
               ],
             ),
           ),
-          if (!taskState.isAccepted)
+          if (taskState.taskState != TaskState.accepted)
             Positioned(
               bottom: 0,
               left: 0,

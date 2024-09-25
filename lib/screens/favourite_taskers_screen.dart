@@ -228,19 +228,22 @@ class FavouriteTaskersScreenState extends State<FavouriteTaskersScreen> with Sin
       itemBuilder: (context, index) {
         final tasker = taskers[index];
         
-        return TaskerCard(
-          tasker: tasker,
-          onViewProfile: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const TaskerProfileScreen(),
-              ),
-            );
-          },
-          onRemove: () {
-            taskersProvider.removeTaskerFromFavorites(tasker);
-          },
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 8.h),
+          child: TaskerCard(
+            tasker: tasker,
+            onViewProfile: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const TaskerProfileScreen(),
+                ),
+              );
+            },
+            onRemove: () {
+              taskersProvider.removeTaskerFromFavorites(tasker);
+            },
+          ),
         );
       },
     );

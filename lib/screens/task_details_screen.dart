@@ -58,9 +58,6 @@ class TaskDetailsScreenState extends State<TaskDetailsScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.tomatoRed,
-        iconTheme: const IconThemeData(
-          color: AppColors.white,
-        ),
         title: const Text(
           'Detajet e punës',
           style: TextStyle(
@@ -69,6 +66,7 @@ class TaskDetailsScreenState extends State<TaskDetailsScreen> {
           ),
         ),
         centerTitle: true,
+        automaticallyImplyLeading: false,
       ),
       body: Stack(
         children: [

@@ -62,6 +62,7 @@ flutter:
     - assets/animations/touch_app.json
     - assets/animations/loading_round.json
     - assets/animations/radar_searching.json
+    - assets/animations/credit_card_payment.json
 
 
 flutter_icons:
