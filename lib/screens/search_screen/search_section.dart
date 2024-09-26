@@ -196,7 +196,7 @@ class SearchSection extends StatelessWidget {
                       ),
                     ),
             ),
-            SizedBox(height: 20.h),
+            SizedBox(height: 10.h),
             
             // Use current location button sliding up
             AnimatedOpacity(
@@ -215,7 +215,6 @@ class SearchSection extends StatelessWidget {
                               fontSize: 16.sp,
                             ),
                           ),
-                          SizedBox(height: 5.h),
                           Icon(
                             CupertinoIcons.chevron_down,
                             color: AppColors.white,

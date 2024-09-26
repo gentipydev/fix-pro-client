@@ -1,8 +1,11 @@
+import 'package:fit_pro_client/providers/map_provider.dart';
+import 'package:fit_pro_client/providers/task_state_provider.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:fit_pro_client/widgets/select_time.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:lottie/lottie.dart';
+import 'package:provider/provider.dart';
 
 class AddTaskDetails extends StatelessWidget {
   const AddTaskDetails({super.key});
@@ -63,34 +66,14 @@ class AddTaskDetails extends StatelessWidget {
                   SizedBox(height: 20.h),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(4.r),
-                                child: Image.asset(
-                                  'assets/images/montim_mobiliesh.jpg',
-                                  width: 60.w,
-                                  height: 60.h,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                              SizedBox(width: 20.w),
-                              Text(
-                                "Montim mobiliesh",
-                                style: TextStyle(
-                                  fontSize: 18.sp,
-                                  color: AppColors.grey700
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                      Text(
+                        "Montim mobiliesh",
+                        style: TextStyle(
+                          fontSize: 18.sp,
+                          color: AppColors.grey700
+                        ),
                       ),
                       SizedBox(width: 20.w),
                       Container(
@@ -109,7 +92,7 @@ class AddTaskDetails extends StatelessWidget {
                     ],
                   ),
                   Divider(color: AppColors.grey100, thickness: 1.w),
-                  SizedBox(height: 20.h),
+                  SizedBox(height: 10.h),
                   const SelectTime(),
                   Divider(color: AppColors.grey200, thickness: 1.w),
                   SizedBox(height: 10.h),
@@ -135,7 +118,7 @@ class AddTaskDetails extends StatelessWidget {
                   Text(
                     'Detajet e Punës',
                     style: TextStyle(
-                      fontSize: 18.sp,
+                      fontSize: 20.sp,
                       color: AppColors.grey700,
                     ),
                   ),
@@ -143,7 +126,7 @@ class AddTaskDetails extends StatelessWidget {
                   Text(
                     'Detajet shtesë ndihmojnë profesionistin të përgatitet për punën. Pasi ta keni pranuar atë, mund ta telefononi për detajet e punës ose mund të lini sa më shum detaje këtu',
                     style: TextStyle(
-                      fontSize: 14.sp,
+                      fontSize: 16.sp,
                       color: AppColors.grey700,
                     ),
                   ),
@@ -159,7 +142,7 @@ class AddTaskDetails extends StatelessWidget {
                       hintText: 'Për shembull, çfarë mjetesh pune janë të nevojshme, ku mund të parkojë, apo detaje të tjera...',
                       hintStyle: TextStyle(
                         color: AppColors.grey500,
-                        fontSize: 12.sp,
+                        fontSize: 14.sp,
                       ),
                       border: const OutlineInputBorder(
                         borderSide: BorderSide(color: AppColors.grey300, width: 1.0),
@@ -183,6 +166,7 @@ class AddTaskDetails extends StatelessWidget {
                 ],
               ),
             ),
+            SizedBox(height: 20.h)
           ],
         ),
       ),
@@ -197,6 +181,10 @@ class AddTaskDetails extends StatelessWidget {
             ),
           ),
           onPressed: () {
+            final taskStateProvider = Provider.of<TaskStateProvider>(context, listen: false);
+            final mapProvider = Provider.of<MapProvider>(context, listen: false);
+            taskStateProvider.resetTask(); 
+            mapProvider.clearPolylines();
             Navigator.pushNamed(context, '/home');
           },
           child: Text(
@@ -213,12 +201,13 @@ class AddTaskDetails extends StatelessWidget {
 
   Widget _buildPaymentSection(BuildContext context) {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
         ListTile(
           title: Text(
             'Pagesa',
             style: TextStyle(
-              fontSize: 16.sp, 
+              fontSize: 18.sp, 
               color: AppColors.grey700
             ),
           ),
@@ -229,7 +218,7 @@ class AddTaskDetails extends StatelessWidget {
             child: Text(
               'Shto mënyrën e pagesës',
               style: TextStyle(
-                fontSize: 16.sp,
+                fontSize: 18.sp,
                 color: AppColors.tomatoRed
               ),
             ),
@@ -237,9 +226,9 @@ class AddTaskDetails extends StatelessWidget {
         ),
         ListTile(
           title: Text(
-            'Promovime',
+            'Promo',
               style: TextStyle(
-              fontSize: 16.sp, 
+              fontSize: 18.sp, 
               color: AppColors.grey700
             ),
           ),
@@ -250,7 +239,7 @@ class AddTaskDetails extends StatelessWidget {
             child: Text(
               'Shto kodin promocional',
                 style: TextStyle(
-                fontSize: 16.sp,
+                fontSize: 18.sp,
                 color: AppColors.tomatoRed
               ),
             ),
@@ -260,14 +249,14 @@ class AddTaskDetails extends StatelessWidget {
           title: Text(
             'Tarifa për orë',
             style: TextStyle(
-              fontSize: 16.sp, 
+              fontSize: 18.sp, 
               color: AppColors.grey700
             ),
           ),
           trailing: Text(
             '2.000 lek/orë pune',
               style: TextStyle(
-                fontSize: 16.sp,
+                fontSize: 18.sp,
                 color: AppColors.grey700
               ),
           ),
@@ -276,7 +265,7 @@ class AddTaskDetails extends StatelessWidget {
         Text(
           'Ju mund të shihni një detyrim të përkohshëm në shumën prej 2.000 lekë. Por mos u shqetësoni -- pagesa do të bëhet vetëm kur puna juaj të përfundojë!',
           style: TextStyle(
-            fontSize: 14.sp,
+            fontSize: 15.sp,
             color: AppColors.grey700,
           ),
         ),
@@ -293,7 +282,7 @@ class AddTaskDetails extends StatelessWidget {
               child: Text(
                 'Nëse anulloni punë tuaj brenda 4 orëve para kohës së caktuar, ne mund t\'ju tarifojmë një penalitet anullimi prej një ore sipas tarifes përkatëse te profesionistit',
                 style: TextStyle(
-                  fontSize: 12.sp,
+                  fontSize: 13.sp,
                   color: AppColors.grey700,
                 ),
               ),

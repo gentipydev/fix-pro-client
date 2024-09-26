@@ -69,7 +69,7 @@ class TaskCard extends StatelessWidget {
                     Text(
                       warningText,
                       style: TextStyle(
-                        fontSize: 12.sp,
+                        fontSize: 16.sp,
                         color: AppColors.tomatoRed,
                       ),
                     ),
@@ -134,9 +134,10 @@ class TaskCard extends StatelessWidget {
               right: 0,
               child: Lottie.asset(
                 'assets/animations/touch_app.json',
-                width: 30.w,
-                height: 30.h,
+                width: 40.w,
+                height: 40.h,
                 fit: BoxFit.cover,
+                repeat: true
               ),
             ),
         ],

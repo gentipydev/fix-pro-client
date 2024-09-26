@@ -1,6 +1,9 @@
+import 'package:fit_pro_client/providers/map_provider.dart';
+import 'package:fit_pro_client/providers/task_state_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fit_pro_client/utils/constants.dart';
+import 'package:provider/provider.dart';
 
 void showCancelDialog(BuildContext context) {
   showDialog(
@@ -83,6 +86,10 @@ void showCancelDialog(BuildContext context) {
                 ),
                 onPressed: () {
                   // Cancel Task
+                  final taskStateProvider = Provider.of<TaskStateProvider>(context, listen: false);
+                  final mapProvider = Provider.of<MapProvider>(context, listen: false);
+                  taskStateProvider.resetTask(); 
+                  mapProvider.clearPolylines();
                   Navigator.of(context).pop();
                   Navigator.of(context).pushReplacementNamed('/home');
                 },

@@ -65,24 +65,11 @@ class TaskerCard extends StatelessWidget {
                         )
                       : const SizedBox.shrink(),
                       SizedBox(width: tasker.isFavorite ? 10.w : 60.w),
-                      RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: '2000 ',
-                              style: TextStyle(
-                                fontSize: 18.sp,
-                                color: AppColors.tomatoRed,
-                              ),
-                            ),
-                            TextSpan(
-                              text: 'lek/ora',
-                              style: TextStyle(
-                                fontSize: 18.sp,
-                                color: AppColors.grey700,
-                              ),
-                            ),
-                          ],
+                      Text(
+                        '2000 lek/ora',
+                        style: TextStyle(
+                          fontSize: 18.sp,
+                          color: AppColors.grey700,
                         ),
                       ),
                     ],
@@ -108,7 +95,7 @@ class TaskerCard extends StatelessWidget {
                     '23 montime mobiliesh ',
                     style: TextStyle(
                       fontSize: 16.sp,
-                      color: AppColors.tomatoRed,
+                      color: AppColors.grey700,
                     ),
                   ),
                   SizedBox(height: 5.h),

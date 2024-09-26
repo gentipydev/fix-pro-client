@@ -24,15 +24,6 @@ class TaskDetailsScreen extends StatefulWidget {
 class TaskDetailsScreenState extends State<TaskDetailsScreen> {
   Logger logger = Logger();
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // final mapProvider = Provider.of<MapProvider>(context, listen: false);
-      // mapProvider.createRoute();
-    });
-  }
-
   Future<void> _openGoogleMaps() async {
     final Uri url = Uri.parse(
         'https://www.google.com/maps/search/?api=1&query=41.332733,19.855935');

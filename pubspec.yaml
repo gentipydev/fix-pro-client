@@ -63,6 +63,7 @@ flutter:
     - assets/animations/loading_round.json
     - assets/animations/radar_searching.json
     - assets/animations/credit_card_payment.json
+    - assets/animations/gift_box.json
 
 
 flutter_icons:

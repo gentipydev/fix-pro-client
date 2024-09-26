@@ -1,5 +1,6 @@
 import 'dart:convert';
-
+import 'dart:io';
+import 'dart:async';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
@@ -37,7 +38,7 @@ class MapProvider with ChangeNotifier {
       notifyListeners();
 
       // Calculate bounds that include both markers and polyline
-      LatLngBounds bounds = _calculateLatLngBounds(routeCoordinates, start, end);
+      LatLngBounds bounds = _calculateLatLngBounds(routeCoordinates);
       
       return bounds;
     } catch (e) {
@@ -46,19 +47,72 @@ class MapProvider with ChangeNotifier {
     }
   }
 
-  Future<List<LatLng>> getRouteCoordinates(LatLng start, LatLng end) async {
+  Future<List<LatLng>> getRouteCoordinates(LatLng start, LatLng end, {int retries = 3}) async {
     final String osrmUrl =
-        'http://router.project-osrm.org/route/v1/driving/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?overview=full&geometries=polyline';
+        'http://192.168.0.48:5000/route/v1/driving/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?overview=full&geometries=polyline';
 
-    final response = await http.get(Uri.parse(osrmUrl));
+    int attempt = 0;
+    while (attempt < retries) {
+      try {
+        // Perform the HTTP request with a timeout
+        final response = await http
+            .get(Uri.parse(osrmUrl))
+            .timeout(const Duration(seconds: 10));
 
-    if (response.statusCode == 200) {
-      final decodedJson = jsonDecode(response.body);
-      final polyline = decodedJson['routes'][0]['geometry'];
-      return decodePolyline(polyline);
-    } else {
-      throw Exception('Failed to fetch route');
+        if (response.statusCode == 200) {
+          // Decode the JSON response and check for valid routes
+          final decodedJson = jsonDecode(response.body);
+          if (decodedJson['routes'] != null &&
+              decodedJson['routes'].isNotEmpty &&
+              decodedJson['routes'][0]['geometry'] != null) {
+            final polyline = decodedJson['routes'][0]['geometry'];
+            logger.d("start: $start");
+            logger.d("end: $end");
+
+            // Decode polyline and ensure first and last points correspond
+            List<LatLng> routeCoordinates = decodePolyline(polyline);
+
+            // Fix the first and last points to exactly match the start and end
+            if (routeCoordinates.isNotEmpty) {
+              routeCoordinates[0] = start;
+              routeCoordinates[routeCoordinates.length - 1] = end;
+            }
+
+            return routeCoordinates;
+          } else {
+            throw Exception('No route found in response');
+          }
+        } else {
+          logger.e('Failed to fetch route, status code: ${response.statusCode}');
+          throw Exception('Failed to fetch route');
+        }
+      } on SocketException catch (e) {
+        // Handle network errors
+        logger.e('Network error: $e');
+      } on TimeoutException catch (e) {
+        // Handle timeout errors
+        logger.e('Request timed out: $e');
+      } catch (e) {
+        // General catch for any other exceptions
+        logger.e('Unexpected error: $e');
+        // Retry for ClientException-like errors
+        if (e.toString().contains('ClientException')) {
+          logger.e('Retrying due to ClientException...');
+        } else {
+          rethrow; // Rethrow other errors
+        }
+      }
+
+      // Delay before retrying
+      attempt++;
+      if (attempt < retries) {
+        logger.d('Retrying... Attempt $attempt of $retries');
+        await Future.delayed(const Duration(seconds: 2));
+      }
     }
+
+    // Throw only if all retry attempts have failed
+    throw Exception('Failed to fetch route after $retries attempts');
   }
 
   List<LatLng> decodePolyline(String polylineString) {
@@ -69,18 +123,17 @@ class MapProvider with ChangeNotifier {
 
     // Convert PointLatLng to LatLng for Google Maps
     List<LatLng> coordinates = result.map((point) => LatLng(point.latitude, point.longitude)).toList();
-
+    logger.d("first_point: ${coordinates.first}");
+    logger.d("last_point: ${coordinates.last}");
     return coordinates;
   }
 
-  LatLngBounds _calculateLatLngBounds(List<LatLng> polylinePoints, LatLng startMarker, LatLng endMarker) {
-    // Initialize min/max values with the start and end marker coordinates
-    double minLat = (startMarker.latitude < endMarker.latitude) ? startMarker.latitude : endMarker.latitude;
-    double minLng = (startMarker.longitude < endMarker.longitude) ? startMarker.longitude : endMarker.longitude;
-    double maxLat = (startMarker.latitude > endMarker.latitude) ? startMarker.latitude : endMarker.latitude;
-    double maxLng = (startMarker.longitude > endMarker.longitude) ? startMarker.longitude : endMarker.longitude;
+  LatLngBounds _calculateLatLngBounds(List<LatLng> polylinePoints) {
+    double minLat = polylinePoints.first.latitude;
+    double minLng = polylinePoints.first.longitude;
+    double maxLat = polylinePoints.first.latitude;
+    double maxLng = polylinePoints.first.longitude;
 
-    // Extend the bounds to include all polyline points
     for (LatLng point in polylinePoints) {
       if (point.latitude < minLat) minLat = point.latitude;
       if (point.longitude < minLng) minLng = point.longitude;
@@ -88,14 +141,12 @@ class MapProvider with ChangeNotifier {
       if (point.longitude > maxLng) maxLng = point.longitude;
     }
 
-    // Return LatLngBounds that fits the entire polyline and markers
     return LatLngBounds(
       southwest: LatLng(minLat, minLng),
       northeast: LatLng(maxLat, maxLng),
     );
   }
 
-  // Method to update polyline points dynamically
   void updatePolyline(List<LatLng> updatedPolylinePoints) {
     _polylines = {
       Polyline(
@@ -108,13 +159,11 @@ class MapProvider with ChangeNotifier {
     notifyListeners();
   }
   
-  // Method to clear all polylines
   void clearPolylines() {
     _polylines = {};
     notifyListeners();
   }
 
-    // Get LatLng from Address using OpenStreetMap Nominatim API
   Future<LatLng> getLatLngFromAddress(String address) async {
     final String url = 'https://nominatim.openstreetmap.org/search?q=${Uri.encodeComponent(address)}&format=json&limit=1';
 

@@ -222,7 +222,7 @@ class TasksScreenState extends State<TasksScreen> with SingleTickerProviderState
                                   },
                                   child: TaskCard(
                                     title: task.title,
-                                    warningText: 'Puna është ende në pritje për tu pranuar',
+                                    warningText: 'Kjo punë është në proçes',
                                     date: task.date,
                                     time: task.time,
                                     location: task.taskArea!,

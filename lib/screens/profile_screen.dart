@@ -1,3 +1,4 @@
+import 'package:fit_pro_client/screens/invite_friend_screen.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/material.dart';
 
@@ -84,10 +85,15 @@ class UserProfileScreen extends StatelessWidget {
             ),
             _buildProfileOption(
               context: context,
-              title: 'Fto nje shok',
-              subtitle: 'Ndaj kodin tënd të referimit dhe perfito 10 euro duke ftuar nje profesionist',
+              title: 'Fto një shok',
+              subtitle: 'Ndaj kodin tënd të referimit dhe përfito 10 euro duke ftuar një profesionist',
               onTap: () {
-                // Navigate to invite friends screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const InviteFriendScreen(),
+                  ),
+                );
               },
             ),
             _buildProfileOption(

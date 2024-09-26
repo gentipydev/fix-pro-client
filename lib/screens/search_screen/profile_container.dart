@@ -59,14 +59,14 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
             children: [
               const Icon(Icons.location_on, color: AppColors.grey700),
               SizedBox(width: 8.w),
-              Expanded( // <-- Added Expanded to prevent overflow
+              Expanded( 
                 child: Text(
                   'Rrethrrotullimi i Farkës, Tiranë',
                   style: TextStyle(
                     color: AppColors.black,
                     fontSize: 16.sp,
                   ),
-                  overflow: TextOverflow.ellipsis, // <-- This ensures that text doesn't overflow
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -165,9 +165,9 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
                                     );
                                   },
                                   child: Text(
-                                    'Shiko profilin e plote',
+                                    'Shiko profilin',
                                     style: TextStyle(
-                                      fontSize: 16.sp,
+                                      fontSize: 20.sp,
                                       color: AppColors.tomatoRed,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -195,9 +195,9 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
                                     );
                                   },
                                   child: Text(
-                                    'Shto detajet e punës',
+                                    'Shto detajet',
                                     style: TextStyle(
-                                      fontSize: 16.sp,
+                                      fontSize: 20.sp,
                                       color: AppColors.tomatoRed,
                                       fontWeight: FontWeight.w500,
                                     ),

@@ -110,8 +110,9 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
       });
 
       // Fetch and draw the polyline between user and fake tasker location
-      // final mapProvider = Provider.of<MapProvider>(context, listen: false);
-      // LatLngBounds? bounds = await mapProvider.fetchRouteFromOSRMApi(currentLocation!, fakeTaskerLocation);
+      final mapProvider = Provider.of<MapProvider>(context, listen: false);
+      LatLngBounds? bounds = await mapProvider.fetchRouteFromOSRMApi(currentLocation!, fakeTaskerLocation);
+      logger.d("bounds: $bounds");
 
       taskStateProvider.setTaskState(TaskState.profileView);
       _toggleMapInteraction(false); // Re-enable map gestures
@@ -121,7 +122,7 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
         _loadTaskerMarkerCurrentLocation(fakeTaskerLocation);
 
         // Center the map
-        // _animateCameraToBounds(bounds);
+        _animateCameraToBounds(bounds);
       });
     });
   }
@@ -160,8 +161,8 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
         });
 
         // Fetch and draw the polyline between user and fake tasker location
-        // final mapProvider = Provider.of<MapProvider>(context, listen: false);
-        // LatLngBounds? bounds = await mapProvider.fetchRouteFromOSRMApi(addressLocation, fakeTaskerLocation);
+        final mapProvider = Provider.of<MapProvider>(context, listen: false);
+        LatLngBounds? bounds = await mapProvider.fetchRouteFromOSRMApi(addressLocation, fakeTaskerLocation);
         
         taskStateProvider.setTaskState(TaskState.profileView);
         _toggleMapInteraction(false); // Re-enable map gestures
@@ -172,7 +173,7 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
           _loadTaskerMarkerAddressLocation(fakeTaskerLocation);
           
           // Center the map
-          // _animateCameraToBounds(bounds);
+          _animateCameraToBounds(bounds);
         });
       });
     } catch (e) {
@@ -281,7 +282,7 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
 
     // Load default user location icon
     final currentLocationIconLoaded = BitmapDescriptor.defaultMarkerWithHue(
-      BitmapDescriptor.hueBlue,
+      BitmapDescriptor.hueRed,
     );
 
     setState(() {
@@ -308,7 +309,7 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
   Future<void> _getCurrentLocationAndInitializeMap() async {
     try {
       // Get the current location from the phone's GPS
-      LatLng currentPosition = const LatLng(41.3275, 19.8189);
+      LatLng currentPosition = await getCurrentLocation();
 
       // Update the map and marker for the current location
       final icon = await BitmapDescriptor.asset(
@@ -344,39 +345,39 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
     }
   }
 
-  // // Function to get the current location of the user
-  // Future<LatLng> getCurrentLocation() async {
-  //   Location location = Location();
-  //   bool serviceEnabled;
-  //   PermissionStatus permissionGranted;
-  //   LocationData locationData;
+  // Function to get the current location of the user
+  Future<LatLng> getCurrentLocation() async {
+    Location location = Location();
+    bool serviceEnabled;
+    PermissionStatus permissionGranted;
+    LocationData locationData;
 
-  //   // Check if location services are enabled
-  //   serviceEnabled = await location.serviceEnabled();
-  //   if (!serviceEnabled) {
-  //     serviceEnabled = await location.requestService();
-  //     if (!serviceEnabled) {
-  //       // Location services are not enabled, throw an error
-  //       throw Exception('Location services are disabled.');
-  //     }
-  //   }
+    // Check if location services are enabled
+    serviceEnabled = await location.serviceEnabled();
+    if (!serviceEnabled) {
+      serviceEnabled = await location.requestService();
+      if (!serviceEnabled) {
+        // Location services are not enabled, throw an error
+        throw Exception('Location services are disabled.');
+      }
+    }
 
-  //   // Check for location permissions
-  //   permissionGranted = await location.hasPermission();
-  //   if (permissionGranted == PermissionStatus.denied) {
-  //     permissionGranted = await location.requestPermission();
-  //     if (permissionGranted != PermissionStatus.granted) {
-  //       // Permissions are denied, throw an error
-  //       throw Exception('Location permissions are denied.');
-  //     }
-  //   }
+    // Check for location permissions
+    permissionGranted = await location.hasPermission();
+    if (permissionGranted == PermissionStatus.denied) {
+      permissionGranted = await location.requestPermission();
+      if (permissionGranted != PermissionStatus.granted) {
+        // Permissions are denied, throw an error
+        throw Exception('Location permissions are denied.');
+      }
+    }
 
-  //   // Get the current location of the user
-  //   locationData = await location.getLocation();
+    // Get the current location of the user
+    locationData = await location.getLocation();
 
-  //   // Return the current location as a LatLng object
-  //   return LatLng(locationData.latitude!, locationData.longitude!);
-  // }
+    // Return the current location as a LatLng object
+    return LatLng(locationData.latitude!, locationData.longitude!);
+  }
 
   @override
   void didChangeDependencies() {
@@ -394,10 +395,9 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
   void _onTaskAccepted() {
     _controller.forward().then((_) {
       setState(() {
-        _statusText = "Profesionisti u pranua për të kryer punën\nJu mund ta kontaktoni atë direkt pasi të keni shtuar detajet e punes...";
+        _statusText = "Profesionisti u pranua për të kryer punën\nJu mund ta kontaktoni atë dhe nderkohë mund të shtoni detaje në lidhje me punën...";
       });
 
-      // Reverse the animation after 500 milliseconds
       Future.delayed(const Duration(milliseconds: 500), () {
         _controller.reverse();
       });
@@ -421,14 +421,20 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
   @override
   Widget build(BuildContext context) {
   final taskState = Provider.of<TaskStateProvider>(context).taskState;
+  final mapProvider = Provider.of<MapProvider>(context, listen: false);
 
   return PopScope(
-    canPop: false,
+    canPop: Provider.of<TaskStateProvider>(context).taskState == TaskState.initial,
     onPopInvoked: (didPop) {
-      final taskState = Provider.of<TaskStateProvider>(context, listen: false).taskState;
-      if (taskState == TaskState.initial || taskState == TaskState.accepted) {
+      final taskStateProvider = Provider.of<TaskStateProvider>(context, listen: false);
+      final taskState = taskStateProvider.taskState;
+
+      if (taskState == TaskState.accepted) {
+        taskStateProvider.resetTask(); 
+        mapProvider.clearPolylines();
         Navigator.of(context).pushReplacementNamed('/home');
-      } else if (taskState == TaskState.searching || taskState == TaskState.profileView) {
+      } 
+      else if (taskState == TaskState.searching || taskState == TaskState.profileView) {
         showCancelDialog(context);
       }
     },
@@ -441,8 +447,8 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
               builder: (context, mapProvider, child) {
                 return GoogleMap(
                   padding: EdgeInsets.only(
-                    top: 90,
-                    bottom: taskState == TaskState.profileView ? 250.h : 0,
+                    top: 100,
+                    bottom: taskState == TaskState.profileView ? 300.h : 0,
                   ),
                   initialCameraPosition: CameraPosition(
                     target: currentLocation ?? const LatLng(41.3275, 19.8189),
