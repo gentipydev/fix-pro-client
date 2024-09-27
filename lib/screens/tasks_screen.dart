@@ -8,7 +8,6 @@ import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'task_details_screen.dart';
 
-
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
 
@@ -221,13 +220,13 @@ class TasksScreenState extends State<TasksScreen> with SingleTickerProviderState
                                     );
                                   },
                                   child: TaskCard(
-                                    title: task.title,
+                                    title: task.taskWorkGroup.title,
                                     warningText: 'Kjo punë është në proçes',
                                     date: task.date,
                                     time: task.time,
                                     location: task.taskArea!,
-                                    clientName: task.clientName,
-                                    clientImage: task.clientImage,
+                                    clientName: task.tasker.fullName,
+                                    clientImage: task.tasker.profileImage,
                                     showLottieIcon: true,
                                     isUrgent: true,
                                   ),
@@ -280,13 +279,13 @@ class TasksScreenState extends State<TasksScreen> with SingleTickerProviderState
                                     );
                                   },
                                   child: TaskCard(
-                                    title: task.title,
+                                    title: task.taskWorkGroup.title,
                                     warningText: 'Puna u përfundua',
                                     date: task.date,
                                     time: task.time,
-                                    location: task.location,
-                                    clientName: task.clientName,
-                                    clientImage: task.clientImage,
+                                    location: task.taskArea!,
+                                    clientName: task.tasker.fullName,
+                                    clientImage: task.tasker.profileImage,
                                     showLottieIcon: false,
                                   ),
                                 ),

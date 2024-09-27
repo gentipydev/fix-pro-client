@@ -66,7 +66,7 @@ class TaskerCard extends StatelessWidget {
                       : const SizedBox.shrink(),
                       SizedBox(width: tasker.isFavorite ? 10.w : 60.w),
                       Text(
-                        '2000 lek/ora',
+                        "${tasker.averagePrice.round().toString()} lek/ora",
                         style: TextStyle(
                           fontSize: 18.sp,
                           color: AppColors.grey700,
@@ -83,7 +83,7 @@ class TaskerCard extends StatelessWidget {
                       ),
                       SizedBox(width: 4.w),
                       Text(
-                        '${tasker.rating} (27 vleresime)',
+                        '${tasker.rating} (${tasker.reviews.length} vlerësime)',
                         style: TextStyle(
                           fontSize: 16.sp,
                           color: Colors.grey[600],
@@ -92,7 +92,7 @@ class TaskerCard extends StatelessWidget {
                     ],
                   ),
                   Text(
-                    '23 montime mobiliesh ',
+                    '${tasker.skills.first.tasksCompleted} ${tasker.skills.first.taskGroup.title}',
                     style: TextStyle(
                       fontSize: 16.sp,
                       color: AppColors.grey700,
@@ -100,7 +100,7 @@ class TaskerCard extends StatelessWidget {
                   ),
                   SizedBox(height: 5.h),
                   Text(
-                    '47 pune ne total',
+                    '${tasker.totalNumberTasks} pune ne total',
                     style: TextStyle(
                       fontSize: 16.sp,
                       color: AppColors.grey700,

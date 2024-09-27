@@ -9,7 +9,7 @@ class TaskCard extends StatelessWidget {
   final String title;
   final String warningText;
   final DateTime date;
-  final String time;
+  final TimeOfDay time;
   final String location;
   final String clientName;
   final String clientImage;
@@ -29,9 +29,17 @@ class TaskCard extends StatelessWidget {
     super.key,
   });
 
+  // Helper function to format TimeOfDay as "02: 00"
+  String formatTimeOfDay(TimeOfDay time) {
+    final String formattedHour = time.hour.toString().padLeft(2, '0');
+    final String formattedMinute = time.minute.toString().padLeft(2, '0');
+    return "$formattedHour: $formattedMinute";
+  }
+
   @override
   Widget build(BuildContext context) {
     String formattedDate = DateFormat('dd MMMM yyyy', 'sq').format(date);
+    String formattedTime = formatTimeOfDay(time);
 
     return Container(
       padding: EdgeInsets.all(16.w),
@@ -90,7 +98,7 @@ class TaskCard extends StatelessWidget {
                         Icon(Icons.access_time, size: 16.sp, color: AppColors.grey700),
                         SizedBox(width: 4.w),
                         Text(
-                          time,
+                          formattedTime, // Display formatted time here
                           style: TextStyle(fontSize: 14.sp, color: AppColors.grey700),
                         ),
                       ],

@@ -383,8 +383,8 @@ class SimpleExpandableFabState extends State<SimpleExpandableFab> with SingleTic
                   alignment: Alignment.center,
                   child: SimpleCircularButton(
                     color: AppColors.grey300,
-                    width: 70.w,
-                    height: 70.h,
+                    width: 80.w,
+                    height: 80.h,
                     content: Text(
                       "Kontakto",
                       style: TextStyle(

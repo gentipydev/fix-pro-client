@@ -141,7 +141,7 @@ class SearchSection extends StatelessWidget {
                                 GestureDetector(
                                   onTap: () {
                                     if (isAddressSelected) {
-                                      performSearch(searchController.text);  // <-- Call performSearch
+                                      performSearch(searchController.text);
                                     } else {
                                       showAddressNotification();
                                     }

@@ -1,98 +1,141 @@
 import 'package:fit_pro_client/models/task_group.dart';
-import 'package:intl/intl.dart';
+import 'package:fit_pro_client/models/tasker.dart';
+import 'package:fit_pro_client/models/user.dart';
+import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 enum TaskStatus { actual, past, accepted }
 
 class Task {
   final String id;
-  final String title;
-  final DateTime date;
-  final String time;
-  final String location;
-  final String clientName;
-  final String clientImage;
-  TaskStatus status; 
+  final User client;
+  final Tasker tasker;
+  
+  // Locations for building map markers and polyline
+  final LatLng userLocation;
+  final LatLng taskerLocation;
+  final List<LatLng> polylineCoordinates;
+  final LatLngBounds bounds;
 
-  // Optional properties
-  final String? clientPhoneNumber;
+  // Removed nullability of taskWorkGroup
+  final TaskGroup taskWorkGroup;
+  final DateTime date;
+  final TimeOfDay time;
   final String? taskArea;
   final double? taskPlaceDistance;
-  final TaskGroup? taskWorkGroup;
-  final String? taskDetails;
-  final String? taskTimeEvaluation;
-  final String? taskTools;
+  final String? userArea;
+  final List<String>? taskTools;
+  final String? paymentMethod; 
+  final String? promoCode;
   final String? taskFullAddress;
+  final String? taskDetails;
+  final String? taskEvaluation;
+  final String? taskExtraDetails;
+  TaskStatus status;
 
   Task({
     required this.id,
-    required this.title,
+    required this.client,
+    required this.tasker,
+    required this.userLocation,
+    required this.taskerLocation,
+    required this.polylineCoordinates,
+    required this.bounds,
+    required this.taskWorkGroup,
     required this.date,
     required this.time,
-    required this.location,
-    required this.clientName,
-    required this.clientImage,
-    required this.status,
-    this.clientPhoneNumber,
     this.taskArea,
     this.taskPlaceDistance,
-    this.taskWorkGroup,
-    this.taskDetails,
-    this.taskTimeEvaluation,
+    this.userArea,
     this.taskTools,
+    this.paymentMethod,
+    this.promoCode,
     this.taskFullAddress,
+    this.taskDetails,
+    this.taskEvaluation,
+    this.taskExtraDetails,
+    required this.status,
   });
 
+  // Factory method to create a Task from a JSON object
   factory Task.fromJson(Map<String, dynamic> json) {
     return Task(
       id: json['id'],
-      title: json['title'],
+      
+      // Deserialize client and tasker as User and Tasker models
+      client: User.fromJson(json['client']),
+      tasker: Tasker.fromJson(json['tasker']),
+      
+      userLocation: LatLng(json['userLocation']['latitude'], json['userLocation']['longitude']),
+      taskerLocation: LatLng(json['taskerLocation']['latitude'], json['taskerLocation']['longitude']),
+      polylineCoordinates: (json['polylineCoordinates'] as List)
+          .map((coordinate) => LatLng(coordinate['latitude'], coordinate['longitude']))
+          .toList(),
+      bounds: LatLngBounds(
+        southwest: LatLng(json['bounds']['southwest']['latitude'], json['bounds']['southwest']['longitude']),
+        northeast: LatLng(json['bounds']['northeast']['latitude'], json['bounds']['northeast']['longitude']),
+      ),
+      
+      taskWorkGroup: TaskGroup.fromJson(json['taskWorkGroup']),
       date: DateTime.parse(json['date']),
-      time: json['time'],
-      location: json['location'],
-      clientName: json['clientName'],
-      clientImage: json['clientImage'],
-      status: TaskStatus.values.firstWhere((e) => e.toString() == 'TaskStatus.${json['status']}'),
-      clientPhoneNumber: json['clientPhoneNumber'],
+      
+      // Deserialize TimeOfDay
+      time: TimeOfDay(
+        hour: int.parse(json['time'].split(':')[0]),
+        minute: int.parse(json['time'].split(':')[1]),
+      ),
+      
       taskArea: json['taskArea'],
       taskPlaceDistance: json['taskPlaceDistance']?.toDouble(),
-      taskWorkGroup: json['taskWorkGroup'] != null
-          ? TaskGroup.fromJson(json['taskWorkGroup'])
-          : null,
-      taskDetails: json['taskDetails'],
-      taskTimeEvaluation: json['taskTimeEvaluation'],
-      taskTools: json['taskTools'],
+      userArea: json['userArea'],
+      taskTools: (json['taskTools'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
+      paymentMethod: json['paymentMethod'],
+      promoCode: json['promoCode'],
       taskFullAddress: json['taskFullAddress'],
+      taskDetails: json['taskDetails'],
+      taskEvaluation: json['taskEvaluation'],
+      taskExtraDetails: json['taskExtraDetails'],
+      status: TaskStatus.values.firstWhere((e) => e.toString() == 'TaskStatus.${json['status']}'),
     );
   }
 
+  // Convert Task object to JSON
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'title': title,
+      
+      // Serialize client and tasker as User and Tasker models
+      'client': client.toJson(),
+      'tasker': tasker.toJson(),
+      
+      'userLocation': {'latitude': userLocation.latitude, 'longitude': userLocation.longitude},
+      'taskerLocation': {'latitude': taskerLocation.latitude, 'longitude': taskerLocation.longitude},
+      'polylineCoordinates': polylineCoordinates
+          .map((coordinate) => {'latitude': coordinate.latitude, 'longitude': coordinate.longitude})
+          .toList(),
+      'bounds': {
+        'southwest': {'latitude': bounds.southwest.latitude, 'longitude': bounds.southwest.longitude},
+        'northeast': {'latitude': bounds.northeast.latitude, 'longitude': bounds.northeast.longitude},
+      },
+      
+      // taskWorkGroup is now mandatory, so no nullable check here
+      'taskWorkGroup': taskWorkGroup.toJson(),
       'date': date.toIso8601String(),
-      'time': time,
-      'location': location,
-      'clientName': clientName,
-      'clientImage': clientImage,
-      'status': status.toString().split('.').last,
-      'clientPhoneNumber': clientPhoneNumber,
+      
+      // Serialize TimeOfDay as a string in "HH:mm" format
+      'time': '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
+
       'taskArea': taskArea,
       'taskPlaceDistance': taskPlaceDistance,
-      'taskWorkGroup': taskWorkGroup?.toJson(),
-      'taskDetails': taskDetails,
-      'taskTimeEvaluation': taskTimeEvaluation,
+      'userArea': userArea,
       'taskTools': taskTools,
+      'paymentMethod': paymentMethod,
+      'promoCode': promoCode,
       'taskFullAddress': taskFullAddress,
+      'taskDetails': taskDetails,
+      'taskEvaluation': taskEvaluation,
+      'taskExtraDetails': taskExtraDetails,
+      'status': status.toString().split('.').last,
     };
   }
-
-  // Helper method to get the start DateTime
-  DateTime get startTime {
-    final format = DateFormat.jm(); // '11:00 AM'
-    final DateTime parsedTime = format.parse(time);
-    return DateTime(date.year, date.month, date.day, parsedTime.hour, parsedTime.minute);
-  }
-
-  // Optional method to get the end time if you have a default duration
-  DateTime get endTime => startTime.add(const Duration(hours: 1));
 }

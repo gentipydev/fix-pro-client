@@ -1,6 +1,8 @@
 import 'package:fit_pro_client/screens/invite_friend_screen.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:lottie/lottie.dart';
 
 class UserProfileScreen extends StatelessWidget {
   const UserProfileScreen({super.key});
@@ -12,41 +14,66 @@ class UserProfileScreen extends StatelessWidget {
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 20),
+              padding: EdgeInsets.symmetric(vertical: 20.h),
               child: Column(
                 children: [
-                  const CircleAvatar(
-                    radius: 40,
-                    backgroundImage: AssetImage('assets/images/client4.png'),
+                  CircleAvatar(
+                    radius: 40.r,
+                    backgroundImage: const AssetImage('assets/images/client4.png'),
                   ),
                   const SizedBox(height: 10),
-                  const Text(
+                  Text(
                     'Alexa Burgaj',
                     style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      color: AppColors.grey700,
+                      fontSize: 18.sp,
                     ),
                   ),
-                  TextButton(
+                  SizedBox(height: 10.h),
+                  ElevatedButton(
                     onPressed: () {
-                      // Add functionality to view account details
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const InviteFriendScreen(),
+                        ),
+                      );
                     },
-                    child: const Text(
-                      'Shiko Detajet e Llogarisë',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontSize: 14,
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24.sp),
+                        side: const BorderSide(color: AppColors.tomatoRed),
                       ),
+                      backgroundColor: AppColors.white,
                     ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Fto një mik dhe fito 10 euro bonus',
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            color: AppColors.tomatoRed,
+                          ),
+                        ),
+                        SizedBox(width: 8.w),
+                        Lottie.asset(
+                          repeat: true,
+                          'assets/animations/celebrating.json',
+                          width: 30.w,
+                          height: 30.h,
+                        ),
+                      ],
+                    )
                   ),
                 ],
               ),
             ),
             _buildProfileOption(
               context: context,
-              title: 'Kërkesat e Mia',
-              subtitle: 'Shiko dhe menaxho kërkesat e tua për shërbimet e ofruara',
+              title: 'Detajet e llogarisë',
+              subtitle: 'Shiko dhe menaxho të dhënat e tua personale',
               onTap: () {
                 // Navigate to the user's requests screen
               },
@@ -81,19 +108,6 @@ class UserProfileScreen extends StatelessWidget {
               subtitle: 'Shiko zbritjet dhe ofertat e disponueshme',
               onTap: () {
                 // Navigate to promotions screen
-              },
-            ),
-            _buildProfileOption(
-              context: context,
-              title: 'Fto një shok',
-              subtitle: 'Ndaj kodin tënd të referimit dhe përfito 10 euro duke ftuar një profesionist',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const InviteFriendScreen(),
-                  ),
-                );
               },
             ),
             _buildProfileOption(

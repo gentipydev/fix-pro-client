@@ -16,7 +16,16 @@ import 'package:provider/provider.dart';
 import 'package:lottie/lottie.dart' as lottie;
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  final bool? searchFromCurrentPosition;
+  final LatLng? currentSearchLocation;
+  final String? searchedAddress;
+
+  const SearchScreen({
+    super.key,
+    this.searchFromCurrentPosition,
+    this.currentSearchLocation,
+    this.searchedAddress,
+  });
 
   @override
   SearchScreenState createState() => SearchScreenState();
@@ -44,7 +53,7 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
   @override
   void initState() {
     super.initState();
-    
+
     _controller = AnimationController(
       duration: const Duration(seconds: 1),
       vsync: this,
@@ -57,6 +66,20 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
       parent: _controller,
       curve: Curves.easeInOut,
     ));
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.searchFromCurrentPosition ?? true) {
+        if (widget.currentSearchLocation != null) {
+          _performSearch(searchFromCurrentPosition: true);
+        } else {
+          _getCurrentLocationAndInitializeMap();
+        }
+      } 
+      // If searchFromCurrentPosition is false, we use the searched address
+      else if (widget.searchedAddress != null && widget.searchedAddress!.isNotEmpty) {
+        _performSearch(searchFromCurrentPosition: false, address: widget.searchedAddress);
+      }
+    });
 
     _getCurrentLocationAndInitializeMap();
     WidgetsBinding.instance.addObserver(this);
@@ -84,9 +107,59 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
     });
   }
 
-  // Trigger the animation and center the map on the marker
-  Future<void> _useCurrentLocation() async {
+  Future<void> _performSearch({bool searchFromCurrentPosition = true, String? address}) async {
+    LatLng? targetLocation;
+
+    // Get the TaskStateProvider to retrieve search details if necessary
     final taskStateProvider = Provider.of<TaskStateProvider>(context, listen: false);
+
+    if (searchFromCurrentPosition) {
+      // Use the local currentLocation if available, otherwise use currentSearchLocation from TaskStateProvider
+      targetLocation = currentLocation ?? taskStateProvider.currentSearchLocation;
+      
+      if (targetLocation == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vendodhja nuk është e disponueshme'))
+        );
+        return;
+      }
+
+      // Save the current location search details
+      taskStateProvider.setSearchDetails(
+        fromCurrentPosition: true,
+        currentPosition: targetLocation,
+      );
+    } else {
+      // Ensure the address is valid
+      if (address == null || address.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ju lutem shkruani një adresë të vlefshme'))
+        );
+        return;
+      }
+
+      try {
+        // Fetch LatLng for the provided address
+        targetLocation = await Provider.of<MapProvider>(context, listen: false).getLatLngFromAddress(address);
+        setState(() {
+          userAddressLocation = targetLocation;
+        });
+
+        // Save the address search details
+        taskStateProvider.setSearchDetails(
+          fromCurrentPosition: false,
+          currentPosition: targetLocation,
+          address: address,
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nuk u gjet vendodhja. Ju lutem provoni përsëri'))
+        );
+        return;
+      }
+    }
+
+    // Proceed with the rest of your logic once targetLocation is determined
     taskStateProvider.setLocationSelected(true);
     taskStateProvider.setTaskState(TaskState.searching);
 
@@ -95,11 +168,12 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
       _isWaiting = true;
     });
 
-    _centerMapOnMarker(currentLocation!);
+    // Center the map on the location (current or searched)
+    _centerMapOnMarker(targetLocation);
     _toggleMapInteraction(true); // Disable map gestures
 
-    // Generate a fake tasker location near the current location
-    LatLng fakeTaskerLocation = _generateFakeTaskerLocation(currentLocation!);
+    // Generate a fake tasker location near the target location
+    LatLng fakeTaskerLocation = _generateFakeTaskerLocation(targetLocation);
 
     // Start the 10-second countdown
     Future.delayed(const Duration(seconds: 10), () async {
@@ -111,15 +185,14 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
 
       // Fetch and draw the polyline between user and fake tasker location
       final mapProvider = Provider.of<MapProvider>(context, listen: false);
-      LatLngBounds? bounds = await mapProvider.fetchRouteFromOSRMApi(currentLocation!, fakeTaskerLocation);
-      logger.d("bounds: $bounds");
+      LatLngBounds? bounds = await mapProvider.fetchRouteFromOSRMApi(targetLocation!, fakeTaskerLocation);
 
       taskStateProvider.setTaskState(TaskState.profileView);
       _toggleMapInteraction(false); // Re-enable map gestures
 
       // Create the route and load tasker marker
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _loadTaskerMarkerCurrentLocation(fakeTaskerLocation);
+        _loadTaskerMarker(fakeTaskerLocation, useCurrentLocation: searchFromCurrentPosition);
 
         // Center the map
         _animateCameraToBounds(bounds);
@@ -127,66 +200,11 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
     });
   }
 
-  Future<void> _performSearch(String address) async {
-    try {
-      // Fetch LatLng for the provided address
-      LatLng addressLocation = await Provider.of<MapProvider>(context, listen: false).getLatLngFromAddress(address);
-      setState(() {
-        userAddressLocation = addressLocation;
-      });
-
-      // Similar to _useCurrentLocation but using the searched location
-      final taskStateProvider = Provider.of<TaskStateProvider>(context, listen: false);
-      taskStateProvider.setLocationSelected(true);
-      taskStateProvider.setTaskState(TaskState.searching);
-
-      setState(() {
-        _statusText = 'Kërkesa i është dërguar profesionistit më të afërt\nJu lutem prisni konfirmimin nga ana e tij...';
-        _isWaiting = true;
-      });
-
-      // Center the map on the found location
-      _centerMapOnMarker(addressLocation);
-      _toggleMapInteraction(true); // Disable map gestures
-
-      // Generate a fake tasker location near the current location
-      LatLng fakeTaskerLocation = _generateFakeTaskerLocation(addressLocation);
-
-      // Start the 10-second countdown
-      Future.delayed(const Duration(seconds: 10), () async {
-        if (!mounted) return;
-        setState(() {
-          _statusText = "Urime! Ky profesionist ka pranuar punen tuaj\nJu mund ta pranoni punen direkt ose pasi keni pare profilin e tij mund ta pranoni apo refuzoni atë...";
-          _isWaiting = false;
-        });
-
-        // Fetch and draw the polyline between user and fake tasker location
-        final mapProvider = Provider.of<MapProvider>(context, listen: false);
-        LatLngBounds? bounds = await mapProvider.fetchRouteFromOSRMApi(addressLocation, fakeTaskerLocation);
-        
-        taskStateProvider.setTaskState(TaskState.profileView);
-        _toggleMapInteraction(false); // Re-enable map gestures
-
-        // Create the route and load tasker marker
-       WidgetsBinding.instance.addPostFrameCallback((_) {
-          // Load the tasker marker
-          _loadTaskerMarkerAddressLocation(fakeTaskerLocation);
-          
-          // Center the map
-          _animateCameraToBounds(bounds);
-        });
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nuk u gjet vendodhja. Ju lutem provoni përsëri.'))
-      );
-    }
-  }
 
   void _animateCameraToBounds(LatLngBounds? bounds) {
     if (mapController != null) {
       mapController!.animateCamera(
-        CameraUpdate.newLatLngBounds(bounds!, 20),
+        CameraUpdate.newLatLngBounds(bounds!, 60),
       );
     }
   }
@@ -206,7 +224,7 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
       _statusText = 'Kërkesa i është dërguar profesionistit më të afërt\nJu lutem prisni konfirmimin nga ana e tij...';
       _isWaiting = true;
     });
-    _useCurrentLocation();
+    _performSearch();
   }
 
   // Center the map on the current location
@@ -240,7 +258,7 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
     });
   }
 
-  Future<void> _loadTaskerMarkerCurrentLocation(LatLng taskerPosition) async {
+  Future<void> _loadTaskerMarker(LatLng taskerPosition, {bool useCurrentLocation = true}) async {
     // Load tasker icon
     final taskerIconLoaded = await BitmapDescriptor.asset(
       const ImageConfiguration(size: Size(90, 90)),
@@ -256,7 +274,10 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
       taskerIcon = taskerIconLoaded;
       currentLocationIcon = currentLocationIconLoaded;
 
-      // Update markers for both tasker and current location
+      // Determine which location to use for the user
+      LatLng userLocation = useCurrentLocation ? currentLocation! : userAddressLocation!;
+
+      // Update markers for both tasker and user location
       markers = {
         Marker(
           markerId: const MarkerId('taskerLocation'),
@@ -265,41 +286,8 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
           anchor: const Offset(0.5, 0.5),
         ),
         Marker(
-          markerId: const MarkerId('currentLocation'),
-          position: currentLocation!,
-          icon: currentLocationIcon!,
-        ),
-      };
-    });
-  }
-
-  Future<void> _loadTaskerMarkerAddressLocation(LatLng taskerPosition) async {
-    // Load tasker icon
-    final taskerIconLoaded = await BitmapDescriptor.asset(
-      const ImageConfiguration(size: Size(90, 90)),
-      'assets/images/tasker3.png',
-    );
-
-    // Load default user location icon
-    final currentLocationIconLoaded = BitmapDescriptor.defaultMarkerWithHue(
-      BitmapDescriptor.hueRed,
-    );
-
-    setState(() {
-      taskerIcon = taskerIconLoaded;
-      currentLocationIcon = currentLocationIconLoaded;
-
-      // Update markers for both tasker and current location
-      markers = {
-        Marker(
-          markerId: const MarkerId('taskerLocation'),
-          position: taskerPosition,
-          icon: taskerIcon!,
-          anchor: const Offset(0.5, 0.5),
-        ),
-        Marker(
-          markerId: const MarkerId('currentLocation'),
-          position: userAddressLocation!,
+          markerId: const MarkerId('userLocation'),
+          position: userLocation,
           icon: currentLocationIcon!,
         ),
       };
@@ -448,7 +436,7 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
                 return GoogleMap(
                   padding: EdgeInsets.only(
                     top: 100,
-                    bottom: taskState == TaskState.profileView ? 300.h : 0,
+                    bottom: taskState == TaskState.profileView ? 260.h : 0,
                   ),
                   initialCameraPosition: CameraPosition(
                     target: currentLocation ?? const LatLng(41.3275, 19.8189),
@@ -517,8 +505,8 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
                 filteredAddresses: _filteredAddresses,
                 onSearch: _searchNewLocation,
                 onSelectLocation: _selectLocation,
-                performSearch: _performSearch,
-                useCurrentLocation: _useCurrentLocation,
+                performSearch: (String address) => _performSearch(searchFromCurrentPosition: false, address: address),
+                useCurrentLocation: _performSearch,
                 showAddressNotification: () => _addAddressNotification(context),
                 slideAnimation: _slideAnimation,
                 statusText: _statusText,

@@ -88,19 +88,19 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Text(
-                            'Arben Gashi',
-                            style: TextStyle(
-                              fontSize: 18.sp,
-                              color: AppColors.grey700,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            overflow: TextOverflow.ellipsis,
+                          Text(
+                          'Arben G.',
+                          style: TextStyle(
+                            fontSize: 18.sp,
+                            color: AppColors.grey700,
+                            fontWeight: FontWeight.bold,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
+                        SizedBox(width: 10.w),
                         Icon(
                           Icons.military_tech,
                           color: AppColors.tomatoRed,

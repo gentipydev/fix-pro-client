@@ -64,6 +64,7 @@ flutter:
     - assets/animations/radar_searching.json
     - assets/animations/credit_card_payment.json
     - assets/animations/gift_box.json
+    - assets/animations/celebrating.json
 
 
 flutter_icons:

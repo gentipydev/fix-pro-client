@@ -2,10 +2,8 @@ import 'package:fit_pro_client/screens/favourite_taskers_screen.dart';
 import 'package:fit_pro_client/screens/profile_screen.dart';
 import 'package:fit_pro_client/screens/tasks_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:fit_pro_client/providers/taskers_provider.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:logger/logger.dart';
 
@@ -136,8 +134,6 @@ final List<Map<String, String>> categories = [
 
   @override
   Widget build(BuildContext context) {
-    final taskersProvider = Provider.of<TaskersProvider>(context, listen: false);
-    var tasker = taskersProvider.taskers.first;
 
     return SingleChildScrollView(
       child: Column(
@@ -286,7 +282,7 @@ final List<Map<String, String>> categories = [
                 SizedBox(height: 16.h),
                 _isLoading
                     ? _buildShimmerGrid()
-                    : _buildCategoryGrid(tasker),
+                    : _buildCategoryGrid(),
               ],
             ),
           ),
@@ -337,7 +333,7 @@ final List<Map<String, String>> categories = [
   }
 
   // Build the actual category grid with images after loading
-  Widget _buildCategoryGrid(dynamic tasker) {
+  Widget _buildCategoryGrid() {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),

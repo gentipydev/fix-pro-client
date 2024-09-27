@@ -6,6 +6,7 @@ import 'package:fit_pro_client/widgets/video_player_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 
 class TaskerProfileScreen extends StatefulWidget {
@@ -45,17 +46,31 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
     // Simulate a network request
     await Future.delayed(const Duration(seconds: 2));
 
-    context.read<TaskStateProvider>().resetTask();
+    final taskStateProvider = context.read<TaskStateProvider>();
+    final mapProvider = Provider.of<MapProvider>(context, listen: false);
+
+    // Reset task and clear the map polylines
+    taskStateProvider.resetTask();
+    mapProvider.clearPolylines();
 
     setState(() {
       isLoadingReject = false;
-      final mapProvider = Provider.of<MapProvider>(context, listen: false);
-      mapProvider.clearPolylines();
     });
+
+    // Check whether the previous search was from the current position or an address
+    final bool searchFromCurrentPosition = taskStateProvider.searchFromCurrentPosition;
+    final LatLng? currentSearchLocation = taskStateProvider.currentSearchLocation;
+    final String? searchedAddress = taskStateProvider.searchedAddress;
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const SearchScreen()),
+      MaterialPageRoute(
+        builder: (context) => SearchScreen(
+          searchFromCurrentPosition: searchFromCurrentPosition,
+          currentSearchLocation: currentSearchLocation,
+          searchedAddress: searchedAddress,
+        ),
+      ),
     );
   }
 

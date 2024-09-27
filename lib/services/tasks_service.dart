@@ -1,136 +1,165 @@
 import 'package:fit_pro_client/models/task.dart';
-import 'package:fit_pro_client/models/task_group.dart';
+import 'package:fit_pro_client/services/fake_data.dart';
+import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:logger/logger.dart';
 
 class TasksService {
   Logger logger = Logger();
 
-  final List<Task> _currentTasksData = [
-    Task(
-      id: "1",
-      title: "Montim Tavoline",
-      date: DateTime.parse("2024-08-27"),
-      time: "11:00 am",
-      location: "Tirane",
-      clientName: "Arben G.",
-      clientImage: "assets/images/client3.png",
-      status: TaskStatus.actual,
-      clientPhoneNumber: "+355696443833",
-      taskArea: "Rrethrrotullimi i Farkës, Tiranë",
-      taskPlaceDistance: 2.7,
-      taskWorkGroup: TaskGroup(
-        id: '4',
-        title: "Montim Mobiliesh",
-        description: "Montim mobiliesh te ndryshme",
-        feePerHour: 2000,
-        isActive: false,
-      ),
-      taskDetails: "Kam tre tavolina që duhet të montohen",
-      taskTimeEvaluation: "Mesatare - Vlerësuar 2-3 orë (p.sh. për montimin e nje set-i mobiliesh)",
-      taskTools: "Profesionisti duhet të sjellë veglat e veta",
-      taskFullAddress: "Tiranë, Rruga George W Bush, Pallati 94107, Hyrja 2",
-    ),
-  ];
+  final FakeData fakeData = FakeData();
 
-  final List<Task> _pastTasksData = [
-    Task(
-      id: "2",
-      title: "Ndryshim Rubinetash",
-      date: DateTime.parse("2024-05-28"),
-      time: "4:00 pm",
-      location: "Tirane",
-      clientName: "Besim B.",
-      clientImage: "assets/images/client5.png",
-      status: TaskStatus.past,
-      clientPhoneNumber: "+355692223344",
-      taskArea: "Lagjja Nr.1, Tirane",
-      taskPlaceDistance: 1.5,
-      taskWorkGroup: TaskGroup(
-        id: '5',
-        title: "Ndryshim Rubinetash",
-        description: "Zëvendësim rubinetash të banjos dhe kuzhinës",
-        feePerHour: 1500,
-        isActive: false,
-      ),
-      taskDetails: "Zëvendësimi i rubinetave të vjetra me të reja",
-      taskTimeEvaluation: "Shpejtë - Vlerësuar 1-2 orë",
-      taskTools: "Veglat e duhura për rubinetë",
-      taskFullAddress: "Durres, Lagjja Nr.1, Pallati 12, Hyrja 3",
-    ),
-    Task(
-      id: "3",
-      title: "Instalim Dushi",
-      date: DateTime.parse("2024-06-06"),
-      time: "1:00 pm",
-      location: "Tirane",
-      clientName: "Eva L.",
-      clientImage: "assets/images/client4.png",
-      status: TaskStatus.past,
-      clientPhoneNumber: "+355693334455",
-      taskArea: "Fresk, Tirane",
-      taskPlaceDistance: 0.8,
-      taskWorkGroup: TaskGroup(
-        id: '6',
-        title: "Instalim Paj. Sanitare",
-        description: "Instalim i dushit dhe pajisjeve të tjera sanitare",
-        feePerHour: 2200,
-        isActive: false,
-      ),
-      taskDetails: "Instalimi i kabinës së dushit me të gjitha aksesorët",
-      taskTimeEvaluation: "Normale - Vlerësuar 2-3 orë",
-      taskTools: "Vegla montimi për kabinën e dushit",
-      taskFullAddress: "Vlore, Rruga Ismail Qemali, Ndërtesa 5, Apartamenti 8",
-    ),
-    Task(
-      id: "4",
-      title: "Instalim Kondicioneri",
-      date: DateTime.parse("2024-06-07"),
-      time: "2:00 pm",
-      location: "Tirane",
-      clientName: "Altin R.",
-      clientImage: "assets/images/client6.png",
-      status: TaskStatus.past,
-      clientPhoneNumber: "+355694445566",
-      taskArea: "Rruga George W Bush, Tirane",
-      taskPlaceDistance: 3.2,
-      taskWorkGroup: TaskGroup(
-        id: '7',
-        title: "Instalim Paj. Elektrike",
-        description: "Instalim dhe konfigurim i kondicionerit",
-        feePerHour: 2500,
-        isActive: false,
-      ),
-      taskDetails: "Instalimi i kondicionerit dhe lidhja me sistemin elektrik",
-      taskTimeEvaluation: "E gjatë - Vlerësuar 3-4 orë",
-      taskTools: "Vegla dhe pajisje për instalimin e kondicionerit",
-      taskFullAddress: "Tirane, Rruga George W Bush, Ndërtesa 10, Apartamenti 12",
-    ),
-  ];
+  // Get the current tasks data from FakeData
+  List<Task> get _currentTasksData => [
+        Task(
+          id: "1",
+          client: fakeData.fakeUser,
+          tasker: fakeData.fakeTaskers[0],
+          userLocation: const LatLng(41.3275, 19.8189),
+          taskerLocation: const LatLng(41.3317, 19.8345),
+          polylineCoordinates: [
+            const LatLng(41.3275, 19.8189),
+            const LatLng(41.3317, 19.8345),
+          ],
+          bounds: LatLngBounds(
+            southwest: const LatLng(41.3275, 19.8189),
+            northeast: const LatLng(41.3317, 19.8345),
+          ),
+          taskWorkGroup: fakeData.fakeTaskGroups[0], // Get task group from FakeData
+          date: DateTime.parse("2024-10-27"),
+          time: const TimeOfDay(hour: 11, minute: 0),
+          taskArea: "Rrethrrotullimi i Farkës, Tiranë",
+          taskPlaceDistance: 2.7,
+          userArea: "Tirane",
+          taskTools: ["Hammer", "Screwdriver"],
+          paymentMethod: "Cash",
+          promoCode: "PROMO2024",
+          taskFullAddress: "Tiranë, Rruga George W Bush, Pallati 94107, Hyrja 2",
+          taskDetails: "Kam tre tavolina që duhet të montohen",
+          taskEvaluation: "Mesatare - Vlerësuar 2-3 orë",
+          taskExtraDetails: "Profesionisti duhet të sjellë veglat e veta",
+          status: TaskStatus.actual,
+        ),
+      ];
 
+  // Get the past tasks data from FakeData
+  List<Task> get _pastTasksData => [
+        Task(
+          id: "2",
+          client: fakeData.fakeUser,
+          tasker: fakeData.fakeTaskers[1],
+          userLocation: const LatLng(41.3275, 19.8189),
+          taskerLocation: const LatLng(41.3317, 19.8345),
+          polylineCoordinates: [
+            const LatLng(41.3275, 19.8189),
+            const LatLng(41.3317, 19.8345),
+          ],
+          bounds: LatLngBounds(
+            southwest: const LatLng(41.3275, 19.8189),
+            northeast: const LatLng(41.3317, 19.8345),
+          ),
+          taskWorkGroup: fakeData.fakeTaskGroups[1],
+          date: DateTime.parse("2024-05-28"),
+          time: const TimeOfDay(hour: 16, minute: 0),
+          taskArea: "Lagjja Nr.1, Tirane",
+          taskPlaceDistance: 1.5,
+          userArea: "Durres",
+          taskTools: ["Wrench", "Pliers"],
+          paymentMethod: "Credit Card",
+          promoCode: null,
+          taskFullAddress: "Durres, Lagjja Nr.1, Pallati 12, Hyrja 3",
+          taskDetails: "Zëvendësimi i rubinetave të vjetra me të reja",
+          taskEvaluation: "Shpejtë - Vlerësuar 1-2 orë",
+          taskExtraDetails: "Veglat e duhura për rubinetë",
+          status: TaskStatus.past,
+        ),
+        Task(
+          id: "3",
+          client: fakeData.fakeUser,
+          tasker: fakeData.fakeTaskers[2],
+          userLocation: const LatLng(41.3275, 19.8189),
+          taskerLocation: const LatLng(41.3317, 19.8345),
+          polylineCoordinates: [
+            const LatLng(41.3275, 19.8189),
+            const LatLng(41.3317, 19.8345),
+          ],
+          bounds: LatLngBounds(
+            southwest: const LatLng(41.3275, 19.8189),
+            northeast: const LatLng(41.3317, 19.8345),
+          ),
+          taskWorkGroup: fakeData.fakeTaskGroups[6],
+          date: DateTime.parse("2024-06-06"),
+          time: const TimeOfDay(hour: 13, minute: 0),
+          taskArea: "Fresk, Tirane",
+          taskPlaceDistance: 0.8,
+          userArea: "Tirane",
+          taskTools: ["Shower installation tools"],
+          paymentMethod: "Cash",
+          promoCode: "SHOWER123",
+          taskFullAddress: "Vlore, Rruga Ismail Qemali, Ndërtesa 5, Apartamenti 8",
+          taskDetails: "Instalimi i kabinës së dushit me të gjitha aksesorët",
+          taskEvaluation: "Normale - Vlerësuar 2-3 orë",
+          taskExtraDetails: "Profesionisti duhet të sjellë veglat e veta",
+          status: TaskStatus.past,
+        ),
+        Task(
+          id: "4",
+          client: fakeData.fakeUser,
+          tasker: fakeData.fakeTaskers[3],
+          userLocation: const LatLng(41.3275, 19.8189),
+          taskerLocation: const LatLng(41.3317, 19.8345),
+          polylineCoordinates: [
+            const LatLng(41.3275, 19.8189),
+            const LatLng(41.3317, 19.8345),
+          ],
+          bounds: LatLngBounds(
+            southwest: const LatLng(41.3275, 19.8189),
+            northeast: const LatLng(41.3317, 19.8345),
+          ),
+          taskWorkGroup: fakeData.fakeTaskGroups[10],
+          date: DateTime.parse("2024-06-07"),
+          time: const TimeOfDay(hour: 14, minute: 0),
+          taskArea: "Rruga George W Bush, Tirane",
+          taskPlaceDistance: 3.2,
+          userArea: "Tirane",
+          taskTools: ["Air conditioning tools"],
+          paymentMethod: "Cash",
+          promoCode: null,
+          taskFullAddress: "Tirane, Rruga George W Bush, Ndërtesa 10, Apartamenti 12",
+          taskDetails: "Instalimi i kondicionerit dhe lidhja me sistemin elektrik",
+          taskEvaluation: "E gjatë - Vlerësuar 3-4 orë",
+          taskExtraDetails: "Profesionisti duhet të sjellë veglat e veta",
+          status: TaskStatus.past,
+        ),
+      ];
 
-
+  // Fetch the current tasks with a delay to simulate network call
   Future<List<Task>> fetchCurrentTasks() async {
     await Future.delayed(const Duration(seconds: 2));
     return _currentTasksData;
   }
 
+  // Fetch the past tasks with a delay to simulate network call
   Future<List<Task>> fetchPastTasks() async {
     await Future.delayed(const Duration(seconds: 2));
     return _pastTasksData;
   }
 
+  // Delete a task by ID
   void deleteTask(String taskId) {
     _currentTasksData.removeWhere((task) => task.id == taskId);
   }
 
+  // Move a task to the correct list based on its status
   void _moveTaskToCorrectList(Task task, TaskStatus status) {
-  if (status == TaskStatus.actual) {
+    if (status == TaskStatus.actual) {
       _currentTasksData.add(task);
     } else if (status == TaskStatus.past) {
       _pastTasksData.add(task);
     }
   }
 
+  // Update a task's status and move it to the correct list
   void updateTaskStatus(String taskId, TaskStatus newStatus) {
     try {
       Task task = _currentTasksData.firstWhere(
@@ -143,8 +172,7 @@ class TasksService {
       _moveTaskToCorrectList(task, newStatus);
       return;
     } catch (e) {
-      // Handle the case where the task was not found in current tasks
+      logger.e("Task not found: $e");
     }
   }
 }
-
