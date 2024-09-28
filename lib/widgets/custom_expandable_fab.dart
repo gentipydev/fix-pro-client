@@ -1,9 +1,15 @@
+import 'package:fit_pro_client/models/task.dart';
+import 'package:fit_pro_client/providers/map_provider.dart';
 import 'package:fit_pro_client/providers/task_state_provider.dart';
+import 'package:fit_pro_client/providers/tasks_provider.dart';
 import 'package:fit_pro_client/services/communication_service.dart';
+import 'package:fit_pro_client/services/fake_data.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:logger/logger.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 
@@ -20,6 +26,7 @@ class ExpandableFab extends StatefulWidget {
 }
 
 class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderStateMixin {
+  Logger logger = Logger();
   late AnimationController animationController;
   late Animation rotationAnimation;
   late Animation degOneTranslationAnimation, degTwoTranslationAnimation, degThreeTranslationAnimation;
@@ -130,7 +137,7 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
                         size: 20.w,
                       ),
                       onClick: () {
-                        _communicationService.sendSmsMessage("Hello", [widget.phoneNumber]);
+                        _communicationService.sendAnSMS("", [widget.phoneNumber]);
                       },
                     ),
                   ),
@@ -147,7 +154,7 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
                         size: 20.w,
                       ),
                       onClick: () {
-                        _communicationService.sendWhatsAppMessage("Hello", widget.phoneNumber);
+                        _communicationService.sendWhatsAppMessage("", widget.phoneNumber);
                       },
                     ),
                   ),
@@ -172,19 +179,71 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                    onClick: currentTaskState == TaskState.accepted
-                        ? _onContactPressed
-                        : () {
-                            context.read<TaskStateProvider>().setTaskState(TaskState.accepted);
-                            setState(() {
-                              isLoading = true;
-                            });
-                            Future.delayed(const Duration(milliseconds: 1500), () {
-                              setState(() {
-                                isLoading = false;
-                              });
-                            });
-                          },
+                onClick: currentTaskState == TaskState.accepted
+                    ? _onContactPressed
+                    : () async {
+                        // Set task state to accepted
+                        context.read<TaskStateProvider>().setTaskState(TaskState.accepted);
+
+                        // Start loading
+                        setState(() {
+                          isLoading = true;
+                        });
+
+                        // Fetch required providers and data
+                        final tasksProvider = context.read<TasksProvider>();
+                        final taskStateProvider = context.read<TaskStateProvider>();
+                        final mapProvider = context.read<MapProvider>();
+                        final fakeData = FakeData();
+
+                        LatLng? userLocation = taskStateProvider.currentSearchLocation;
+                        LatLng? taskerLocation = taskStateProvider.taskerLocation;
+
+                        if (userLocation == null || taskerLocation == null) {
+                          logger.e("User or Tasker location is missing");
+                          setState(() {
+                            isLoading = false; // Stop loading in case of missing locations
+                          });
+                          return;
+                        }
+
+                        try {
+                          String taskerArea = await mapProvider.getAddressFromLatLng(taskerLocation, isFullAddress: false);
+                          String taskFullAddress = await mapProvider.getAddressFromLatLng(taskerLocation, isFullAddress: true);
+
+                          double taskerPlaceDistance = mapProvider.calculateDistance(userLocation, taskerLocation);
+                          double distanceInKm = taskerPlaceDistance / 1000;
+                          String formattedDistance = distanceInKm.toStringAsFixed(1);
+
+                          // Create the task using the retrieved locations and tasker area
+                          tasksProvider.createTask(
+                            client: fakeData.fakeUser,
+                            tasker: fakeData.fakeTaskers[0],
+                            userLocation: userLocation,
+                            taskerLocation: taskerLocation,
+                            date: DateTime.now(),
+                            time: TimeOfDay.now(),
+                            taskWorkGroup: taskStateProvider.selectedTaskGroup!,
+                            taskerArea: taskerArea, 
+                            taskPlaceDistance: formattedDistance,
+                            taskFullAddress: taskFullAddress,
+                            taskDetails: '',
+                            paymentMethod: '',
+                            promoCode: '',
+                            taskEvaluation: '',
+                            taskTools: [],
+                            taskExtraDetails: '',
+                            userArea: '',
+                            status: TaskStatus.accepted,
+                          );
+                        } catch (e) {
+                          logger.e("Failed to fetch tasker area: $e");
+                        }
+                        // Stop loading after task creation
+                        setState(() {
+                          isLoading = false;
+                        });
+                    },
                     isLoading: isLoading,
                   ),
                 ),
@@ -357,7 +416,7 @@ class SimpleExpandableFabState extends State<SimpleExpandableFab> with SingleTic
                         size: 20.w,
                       ),
                       onClick: () {
-                        _communicationService.sendSmsMessage("Hello", [widget.phoneNumber]);
+                        _communicationService.sendAnSMS("", [widget.phoneNumber]);
                       },
                     ),
                   ),
@@ -374,7 +433,7 @@ class SimpleExpandableFabState extends State<SimpleExpandableFab> with SingleTic
                         size: 20.w,
                       ),
                       onClick: () {
-                        _communicationService.sendWhatsAppMessage("Hello", widget.phoneNumber);
+                        _communicationService.sendWhatsAppMessage("", widget.phoneNumber);
                       },
                     ),
                   ),

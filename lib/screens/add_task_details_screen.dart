@@ -124,7 +124,7 @@ class AddTaskDetails extends StatelessWidget {
                   ),
                   SizedBox(height: 10.h),
                   Text(
-                    'Detajet shtesë ndihmojnë profesionistin të përgatitet për punën. Pasi ta keni pranuar atë, mund ta telefononi për detajet e punës ose mund të lini sa më shum detaje këtu',
+                    'Detajet shtesë ndihmojnë profesionistin të përgatitet për punën',
                     style: TextStyle(
                       fontSize: 16.sp,
                       color: AppColors.grey700,

@@ -1,5 +1,6 @@
 import 'package:fit_pro_client/models/task.dart';
 import 'package:fit_pro_client/providers/map_provider.dart';
+import 'package:fit_pro_client/screens/add_task_details_screen.dart';
 import 'package:fit_pro_client/screens/tasker_profile_screen.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:fit_pro_client/widgets/custom_expandable_fab.dart';
@@ -26,49 +27,72 @@ class TaskDetailsScreenState extends State<TaskDetailsScreen> {
   Logger logger = Logger();
   GoogleMapController? mapController;
   Set<Marker> markers = {};
+  Set<Polyline> polylines = {};
 
-  @override
-  void initState() {
-    super.initState();
-    _setupMap(widget.task.taskerLocation, widget.task.userLocation, widget.task.bounds);
-  }
+  Future<void> _setupMap(LatLng taskerPosition, LatLng userPosition, LatLngBounds? bounds) async {
+    try {
+      // Load tasker icon with fallback
+      BitmapDescriptor taskerIconLoaded;
+      try {
+        taskerIconLoaded = await BitmapDescriptor.asset(
+          const ImageConfiguration(size: Size(90, 90)),
+          widget.task.tasker.mapProfileImage,
+        );
+      } catch (e) {
+        logger.e("Error loading tasker icon: $e");
+        taskerIconLoaded = BitmapDescriptor.defaultMarker;
+      }
 
-  Future<void> _setupMap(LatLng taskerPosition, LatLng userPosition, LatLngBounds bounds) async {
-    // Load tasker icon
-    final taskerIconLoaded = await BitmapDescriptor.asset(
-      const ImageConfiguration(size: Size(90, 90)),
-      widget.task.tasker.profileImage,
-    );
+      // Load default user location icon
+      final currentLocationIconLoaded = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
 
-    // Load default user location icon
-    final currentLocationIconLoaded = BitmapDescriptor.defaultMarkerWithHue(
-      BitmapDescriptor.hueRed,
-    );
+      // If bounds are not provided, fetch them using MapProvider
+      LatLngBounds? effectiveBounds = bounds;
+      if (effectiveBounds == null) {
+        final result = await Provider.of<MapProvider>(context, listen: false).fetchPastTaskRouteFromOSRMApi(userPosition, taskerPosition);
 
-    // Update markers for both tasker and user location
-    setState(() {
-      markers = {
-        Marker(
-          markerId: const MarkerId('taskerLocation'),
-          position: taskerPosition,
-          icon: taskerIconLoaded,
-          anchor: const Offset(0.5, 0.5),
-        ),
-        Marker(
-          markerId: const MarkerId('userLocation'),
-          icon: currentLocationIconLoaded,
-          position: userPosition,
-        ),
-      };
-    });
+        if (result != null) {
+          effectiveBounds = result['bounds'];
+          widget.task.polylineCoordinates.clear();
+          widget.task.polylineCoordinates.addAll(result['routeCoordinates']);
+        }
+      }
 
-    // Animate the camera to the bounds
-    if (mapController != null) {
-      mapController!.animateCamera(
-        CameraUpdate.newLatLngBounds(bounds, 60),
+      final polyline = Polyline(
+        polylineId: const PolylineId('taskRoute'),
+        points: widget.task.polylineCoordinates,
+        color: AppColors.black,
+        width: 3,
       );
+
+      setState(() {
+        markers = {
+          Marker(
+            markerId: const MarkerId('taskerLocation'),
+            position: taskerPosition,
+            icon: taskerIconLoaded,
+            anchor: const Offset(0.5, 0.5),
+          ),
+          Marker(
+            markerId: const MarkerId('userLocation'),
+            icon: currentLocationIconLoaded,
+            position: userPosition,
+          ),
+        };
+
+        polylines = {polyline};
+      });
+
+      if (mapController != null && effectiveBounds != null) {
+        mapController!.animateCamera(
+          CameraUpdate.newLatLngBounds(effectiveBounds, 30),
+        );
+      }
+    } catch (e) {
+      logger.e("Error setting up map: $e");
     }
   }
+
 
   Future<void> _openGoogleMaps() async {
     final Uri url = Uri.parse(
@@ -118,29 +142,21 @@ class TaskDetailsScreenState extends State<TaskDetailsScreen> {
                       builder: (context, mapProvider, child) {
                         return GoogleMap(
                           initialCameraPosition: const CameraPosition(
-                            target: LatLng(41.333556, 19.849746),
+                            target: LatLng(41.3275, 19.8189),
                             zoom: 15.5,
                           ),
                           onMapCreated: (GoogleMapController controller) {
-                            mapProvider.loadMapStyle(context);
+                            mapController = controller;
+                             mapProvider.loadMapStyle(context);
+                            _setupMap(widget.task.taskerLocation, widget.task.userLocation, widget.task.bounds);
                           },
                           style: mapProvider.mapStyle,
-                          polylines: mapProvider.polylines,
-                          markers: {
-                            Marker(
-                              markerId: const MarkerId('taskLocation'),
-                              position: const LatLng(41.332918, 19.854820),
-                              icon: BitmapDescriptor.defaultMarkerWithHue(
-                                  BitmapDescriptor.hueAzure),
-                            ),
-                            Marker(
-                              markerId: const MarkerId('userLocation'),
-                              position: const LatLng(41.333688, 19.846087),
-                              icon: BitmapDescriptor.defaultMarkerWithHue(
-                                  BitmapDescriptor.hueRed),
-                            ),
-                          },
-                          zoomControlsEnabled: false,
+                          polylines: polylines,
+                          markers: markers,
+                          zoomControlsEnabled: true,
+                          scrollGesturesEnabled: true, 
+                          zoomGesturesEnabled: true,
+                          rotateGesturesEnabled: true,
                         );
                       },
                     ),
@@ -200,7 +216,7 @@ class TaskDetailsScreenState extends State<TaskDetailsScreen> {
                           SizedBox(width: 8.w),
                           Expanded( 
                             child: Text(
-                              widget.task.taskArea!,
+                              widget.task.taskerArea!,
                               style: TextStyle(
                                 color: AppColors.black,
                                 fontSize: 16.sp,
@@ -212,7 +228,7 @@ class TaskDetailsScreenState extends State<TaskDetailsScreen> {
                       ),
                       SizedBox(height: 4.h),
                       Text(
-                        'Rreth ${widget.task.taskPlaceDistance!.round().toString()} km',
+                        'Rreth ${widget.task.taskPlaceDistance!} km',
                         style: TextStyle(
                           fontSize: 14.sp,
                           color: AppColors.grey700,
@@ -282,7 +298,7 @@ class TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => const TaskerProfileScreen(),
+                                        builder: (context) => TaskerProfileScreen(tasker: widget.task.tasker),
                                       ),
                                     );
                                   },
@@ -318,10 +334,32 @@ class TaskDetailsScreenState extends State<TaskDetailsScreen> {
                         style: TextStyle(fontSize: 16.sp),
                       ),
                       SizedBox(height: 4.h),
-                      Text(
+                  widget.task.taskDetails != null && widget.task.taskDetails!.isNotEmpty
+                    ? Text(
                         widget.task.taskDetails!,
                         style: TextStyle(
-                            fontSize: 14.sp, color: AppColors.grey700),
+                          fontSize: 14.sp,
+                          color: AppColors.grey700,
+                        ),
+                      )
+                    : Row(
+                        children: [
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            color: AppColors.tomatoRed,
+                            size: 20.sp,
+                          ),
+                          SizedBox(width: 4.w),
+                          Expanded(
+                            child: Text(
+                              'Ju lutem shtoni detaje në lidhje me punën më poshtë',
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: AppColors.tomatoRed,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       SizedBox(height: 4.h),
                       const Divider(color: AppColors.grey300, thickness: 0.5),
@@ -361,7 +399,26 @@ class TaskDetailsScreenState extends State<TaskDetailsScreen> {
                         fontSize: 14.sp, color: AppColors.grey700
                         ),
                       ),
-                      SizedBox(height: 80.h),
+                      SizedBox(height: 20.h),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AddTaskDetails(),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          'Shto detaje të tjera...',
+                          style: TextStyle(
+                            fontSize: 18.sp,
+                            color: AppColors.tomatoRed,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 60.h),
                     ],
                   ),
                 ),

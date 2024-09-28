@@ -1,11 +1,15 @@
+import 'package:fit_pro_client/providers/task_state_provider.dart';
+import 'package:fit_pro_client/providers/tasks_provider.dart';
 import 'package:fit_pro_client/screens/favourite_taskers_screen.dart';
 import 'package:fit_pro_client/screens/profile_screen.dart';
 import 'package:fit_pro_client/screens/tasks_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/material.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:provider/provider.dart';
 import 'package:logger/logger.dart';
+import 'package:fit_pro_client/services/fake_data.dart';
+import 'package:fit_pro_client/models/task_group.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -32,6 +36,8 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    int acceptedTaskCount = context.watch<TasksProvider>().acceptedTaskCount;
+
     return Scaffold(
       backgroundColor: AppColors.white,
       body: SafeArea(
@@ -44,20 +50,51 @@ class HomeScreenState extends State<HomeScreen> {
         type: BottomNavigationBarType.fixed,
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: ImageIcon(AssetImage('assets/icons/home.png')),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: ImageIcon(AssetImage('assets/icons/tasks.png')),
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const ImageIcon(AssetImage('assets/icons/tasks.png')),
+                if (acceptedTaskCount > 0)
+                  Positioned(
+                    right: -6,
+                    top: -6,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: AppColors.tomatoRed,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.white, width: 1),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        acceptedTaskCount > 2 ? '2+' : '$acceptedTaskCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             label: 'Punët',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: ImageIcon(AssetImage('assets/icons/taskers.png')),
             label: 'Profesionist',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: ImageIcon(AssetImage('assets/icons/profile.png')),
             label: 'Profili',
           ),
@@ -78,70 +115,26 @@ class HomeContent extends StatefulWidget {
 
 class _HomeContentState extends State<HomeContent> {
   Logger logger = Logger();
-  List<Map<String, String>> filteredSuggestions = [];
+  FakeData fakeData = FakeData(); // Access the FakeData instance
+  List<TaskGroup> filteredSuggestions = [];
   final TextEditingController _controller = TextEditingController();
-  bool _isLoading = true;
-
-final List<Map<String, String>> categories = [
-    {'name': 'Montim mobiliesh', 'imagePath': 'assets/images/montim_mobiliesh.jpg'},
-    {'name': 'Patinime muresh', 'imagePath': 'assets/images/patinime_muresh.jpg'},
-    {'name': 'Lyerje muresh', 'imagePath': 'assets/images/lyerje_muresh.jpg'},
-    {'name': 'Punime ne kopesht', 'imagePath': 'assets/images/punime_ne_kopesht.jpg'},
-    {'name': 'Montime Dyer/Dritare', 'imagePath': 'assets/images/montim_dyer_dritare.jpg'},
-    {'name': 'Montim Kondicioneri', 'imagePath': 'assets/images/montim_kondicioneri.jpg'},
-    {'name': 'Pastrim shtepie', 'imagePath': 'assets/images/pastrim_shtepie.jpg'},
-    {'name': 'Pastrim zyre', 'imagePath': 'assets/images/pastrim_zyre.jpg'},
-    {'name': 'Punime hidraulike', 'imagePath': 'assets/images/punime_hidraulike.jpg'},
-    {'name': 'Punime elektrike', 'imagePath': 'assets/images/punime_elektrike.jpg'},
-    {'name': 'Punime druri', 'imagePath': 'assets/images/punime_druri.jpg'},
-    {'name': 'Vjelje ullinjsh', 'imagePath': 'assets/images/vjelje_ullinjsh.jpg'},
-    {'name': 'Karrotrec', 'imagePath': 'assets/images/karrotrec.jpg'},
-    {'name': 'Montim kamerash', 'imagePath': 'assets/images/montim_kamerash.jpg'},
-    {'name': 'Riparim dushi', 'imagePath': 'assets/images/riparime_banjo.jpg'},
-    {'name': 'Instalim paneli', 'imagePath': 'assets/images/instalim_panelesh_diellore.jpg'},
-    {'name': 'Riparime çatie', 'imagePath': 'assets/images/riparim_catie.jpg'},
-    {'name': 'Pastrim oxhaqesh', 'imagePath': 'assets/images/pastrim_oxhaqesh.jpg'},
-    {'name': 'Punime me gips', 'imagePath': 'assets/images/punime_gipsi.jpg'},
-    {'name': 'Instalim ndriçimi', 'imagePath': 'assets/images/instalim_ndricimi.jpg'},
-    {'name': 'Shtrim pllakash', 'imagePath': 'assets/images/shtrim_pllakash.jpg'},
-    {'name': 'Pastrim pishinash', 'imagePath': 'assets/images/pastrim_pishinash.jpg'},
-    {'name': 'Pastrim xhamash', 'imagePath': 'assets/images/pastrim_dyer_dritare.jpg'},
-    {'name': 'Larje tapeti', 'imagePath': 'assets/images/larje_tapeti.jpg'},
-  ];
-
 
   @override
   void initState() {
     super.initState();
-    _loadCategories();
-
     _controller.clear();
     filteredSuggestions.clear();
   }
 
-
-  Future<void> _loadCategories() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    await Future.delayed(const Duration(milliseconds: 1500));
-
-    setState(() {
-      _isLoading = false;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
           Container(
-              decoration: BoxDecoration(
+            decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [AppColors.tomatoRedLight, AppColors.tomatoRed],
                 begin: Alignment.topCenter,
@@ -191,8 +184,8 @@ final List<Map<String, String>> categories = [
                       if (value.isEmpty) {
                         filteredSuggestions.clear();
                       } else {
-                        filteredSuggestions = categories.where((category) => 
-                        category['name']!.toLowerCase().contains(value.toLowerCase())).toList();
+                        filteredSuggestions = fakeData.fakeTaskGroups
+                            .where((category) => category.title.toLowerCase().contains(value.toLowerCase())).toList();
                       }
                     });
                   },
@@ -239,14 +232,14 @@ final List<Map<String, String>> categories = [
                           leading: ClipRRect(
                             borderRadius: BorderRadius.circular(4.r),
                             child: Image.asset(
-                              suggestion['imagePath']!,
+                              suggestion.imagePath,
                               width: 50.w,
                               height: 50.h,
                               fit: BoxFit.cover,
                             ),
                           ),
                           title: Text(
-                            suggestion['name']!,
+                            suggestion.title,
                             style: TextStyle(
                               color: AppColors.grey700,
                               fontSize: 16.sp,
@@ -280,9 +273,7 @@ final List<Map<String, String>> categories = [
                   ),
                 ),
                 SizedBox(height: 16.h),
-                _isLoading
-                    ? _buildShimmerGrid()
-                    : _buildCategoryGrid(),
+                _buildCategoryGrid(),
               ],
             ),
           ),
@@ -292,45 +283,45 @@ final List<Map<String, String>> categories = [
     );
   }
 
-  // Build the shimmer effect grid
-  Widget _buildShimmerGrid() {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 8.w,
-        mainAxisSpacing: 8.h,
-        childAspectRatio: 0.85,
-      ),
-      itemCount: categories.length,
-      itemBuilder: (context, index) {
-        return Shimmer.fromColors(
-          baseColor: AppColors.grey300,
-          highlightColor: AppColors.grey100,
-          child: Column(
-            children: [
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: AppColors.grey300,
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                ),
-              ),
-              SizedBox(height: 8.h),
-              Container(
-                width: double.infinity,
-                height: 16.h,
-                color: AppColors.grey300,
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  // // Build the shimmer effect grid
+  // Widget _buildShimmerGrid() {
+  //   return GridView.builder(
+  //     shrinkWrap: true,
+  //     physics: const NeverScrollableScrollPhysics(),
+  //     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+  //       crossAxisCount: 3,
+  //       crossAxisSpacing: 8.w,
+  //       mainAxisSpacing: 8.h,
+  //       childAspectRatio: 0.85,
+  //     ),
+  //     itemCount: fakeData.fakeTaskGroups.length,
+  //     itemBuilder: (context, index) {
+  //       return Shimmer.fromColors(
+  //         baseColor: AppColors.grey300,
+  //         highlightColor: AppColors.grey100,
+  //         child: Column(
+  //           children: [
+  //             Expanded(
+  //               child: Container(
+  //                 width: double.infinity,
+  //                 decoration: BoxDecoration(
+  //                   color: AppColors.grey300,
+  //                   borderRadius: BorderRadius.circular(8.r),
+  //                 ),
+  //               ),
+  //             ),
+  //             SizedBox(height: 8.h),
+  //             Container(
+  //               width: double.infinity,
+  //               height: 16.h,
+  //               color: AppColors.grey300,
+  //             ),
+  //           ],
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 
   // Build the actual category grid with images after loading
   Widget _buildCategoryGrid() {
@@ -343,11 +334,15 @@ final List<Map<String, String>> categories = [
         mainAxisSpacing: 8.h,
         childAspectRatio: 0.85,
       ),
-      itemCount: categories.length,
+      itemCount: fakeData.fakeTaskGroups.length,
       itemBuilder: (context, index) {
-        final category = categories[index];
+        final category = fakeData.fakeTaskGroups[index];
+
         return GestureDetector(
           onTap: () {
+            context.read<TaskStateProvider>().setSelectedTaskGroup(category);
+            
+            // Navigate to the search screen
             Navigator.pushNamed(context, '/search-screen');
           },
           child: Column(
@@ -356,7 +351,7 @@ final List<Map<String, String>> categories = [
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8.r),
                   child: Image.asset(
-                    category['imagePath']!,
+                    category.imagePath,
                     fit: BoxFit.cover,
                     width: double.infinity,
                   ),
@@ -364,7 +359,7 @@ final List<Map<String, String>> categories = [
               ),
               SizedBox(height: 8.h),
               Text(
-                category['name']!,
+                category.title,
                 style: TextStyle(
                   color: AppColors.grey700,
                   fontSize: 14.sp,

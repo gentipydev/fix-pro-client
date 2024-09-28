@@ -1,4 +1,6 @@
+import 'package:fit_pro_client/models/tasker.dart';
 import 'package:fit_pro_client/screens/add_task_details_screen.dart';
+import 'package:fit_pro_client/services/fake_data.dart';
 import 'package:flutter/material.dart';
 import 'package:fit_pro_client/providers/task_state_provider.dart';
 import 'package:fit_pro_client/screens/tasker_profile_screen.dart';
@@ -35,6 +37,8 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
   @override
   Widget build(BuildContext context) {
     final taskState = Provider.of<TaskStateProvider>(context).taskState;
+    final FakeData fakeData = FakeData();
+    final Tasker firstTasker = fakeData.fakeTaskers[0];
 
     // Trigger the animation when state changes to accepted
     if (taskState == TaskState.accepted) {
@@ -160,7 +164,7 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => const TaskerProfileScreen(),
+                                        builder: (context) => TaskerProfileScreen(tasker: firstTasker),
                                       ),
                                     );
                                   },

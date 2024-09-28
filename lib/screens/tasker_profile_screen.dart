@@ -1,22 +1,30 @@
+import 'package:fit_pro_client/models/task.dart';
+import 'package:fit_pro_client/models/tasker.dart';
 import 'package:fit_pro_client/providers/map_provider.dart';
 import 'package:fit_pro_client/providers/task_state_provider.dart';
+import 'package:fit_pro_client/providers/tasks_provider.dart';
 import 'package:fit_pro_client/screens/search_screen/search_screen.dart';
+import 'package:fit_pro_client/services/fake_data.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:fit_pro_client/widgets/video_player_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 
 class TaskerProfileScreen extends StatefulWidget {
-  const TaskerProfileScreen({super.key});
+  final Tasker tasker;
+
+  const TaskerProfileScreen({super.key, required this.tasker});
 
   @override
   TaskerProfileScreenState createState() => TaskerProfileScreenState();
 }
 
 class TaskerProfileScreenState extends State<TaskerProfileScreen> {
+  Logger logger = Logger();
   bool isLoadingAccept = false; 
   bool isLoadingReject = false; 
   bool _showAllReviews = false;
@@ -27,15 +35,64 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
     });
 
     // Simulate a network request
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 1));
 
-    context.read<TaskStateProvider>().setTaskState(TaskState.accepted);
+    // Fetch required providers and data
+    final tasksProvider = context.read<TasksProvider>();
+    final taskStateProvider = context.read<TaskStateProvider>();
+    final mapProvider = context.read<MapProvider>();
+    final fakeData = FakeData();
 
+    LatLng? userLocation = taskStateProvider.currentSearchLocation;
+    LatLng? taskerLocation = taskStateProvider.taskerLocation;
+
+    if (userLocation == null || taskerLocation == null) {
+      logger.e("User or Tasker location is missing");
+      setState(() {
+        isLoadingAccept = true; // Stop loading in case of missing locations
+      });
+      return;
+    }
+
+    try {
+      String taskerArea = await mapProvider.getAddressFromLatLng(taskerLocation, isFullAddress: false);
+      String taskFullAddress = await mapProvider.getAddressFromLatLng(taskerLocation, isFullAddress: true);
+
+      double taskerPlaceDistance = mapProvider.calculateDistance(userLocation, taskerLocation);
+      double distanceInKm = taskerPlaceDistance / 1000;
+      String formattedDistance = distanceInKm.toStringAsFixed(1);
+
+      // Create the task using the retrieved locations and tasker area
+      tasksProvider.createTask(
+        client: fakeData.fakeUser,
+        tasker: fakeData.fakeTaskers[0],
+        userLocation: userLocation,
+        taskerLocation: taskerLocation,
+        date: DateTime.now(),
+        time: TimeOfDay.now(),
+        taskWorkGroup: taskStateProvider.selectedTaskGroup!,
+        taskerArea: taskerArea, 
+        taskPlaceDistance: formattedDistance,
+        taskFullAddress: taskFullAddress,
+        taskDetails: '',
+        paymentMethod: '',
+        promoCode: '',
+        taskEvaluation: '',
+        taskTools: [],
+        taskExtraDetails: '',
+        userArea: '',
+        status: TaskStatus.accepted,
+      );
+    } catch (e) {
+      logger.e("Failed to fetch tasker area: $e");
+    }
+    // Stop loading after task creation
     setState(() {
       isLoadingAccept = false;
     });
-
     Navigator.pop(context);
+    // Set task state to accepted
+    context.read<TaskStateProvider>().setTaskState(TaskState.accepted);
   }
 
   void _handleRejectTask() async {
@@ -44,13 +101,13 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
     });
 
     // Simulate a network request
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 1));
 
     final taskStateProvider = context.read<TaskStateProvider>();
     final mapProvider = Provider.of<MapProvider>(context, listen: false);
 
     // Reset task and clear the map polylines
-    taskStateProvider.resetTask();
+    taskStateProvider.rejectTask();
     mapProvider.clearPolylines();
 
     setState(() {
@@ -94,14 +151,14 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
               ],
             ),
           ),
-          if (taskState.taskState != TaskState.accepted)
+          if (taskState.taskState == TaskState.profileView)
             Positioned(
               bottom: 0,
               left: 0,
               right: 0,
               child: Container(
                 padding: EdgeInsets.only(left: 16.w, right: 16.w, bottom: 16.h),
-                color: AppColors.white.withOpacity(0.9),
+                color: AppColors.white,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -137,23 +194,23 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
                     ElevatedButton.icon(
                       onPressed: isLoadingReject ? null : _handleRejectTask,
                       icon: isLoadingReject
-                          ? const Padding(
-                              padding: EdgeInsets.all(4.0),
-                              child: SpinKitThreeBounce(
-                                color: AppColors.tomatoRed,
-                                size: 16.0,
-                              ),
-                            )
-                          : const Icon(Icons.close, color: AppColors.black),
-                      label: isLoadingReject
-                          ? const SizedBox.shrink()
-                          : Text(
-                              'Hiq dorë',
-                              style: TextStyle(
-                                fontSize: 18.sp,
-                                color: AppColors.black,
-                              ),
+                        ? const Padding(
+                            padding: EdgeInsets.all(4.0),
+                            child: SpinKitThreeBounce(
+                              color: AppColors.tomatoRed,
+                              size: 16.0,
                             ),
+                          )
+                        : const Icon(Icons.close, color: AppColors.black),
+                      label: isLoadingReject
+                        ? const SizedBox.shrink()
+                        : Text(
+                            'Hiq dorë',
+                            style: TextStyle(
+                              fontSize: 18.sp,
+                              color: AppColors.black,
+                            ),
+                          ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.grey300,
                         minimumSize: Size(double.infinity, 50.h),
@@ -206,9 +263,9 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
             padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: Row(
               children: [
-                const CircleAvatar(
+              CircleAvatar(
                   radius: 40,
-                  backgroundImage: AssetImage('assets/images/client3.png'),
+                  backgroundImage: AssetImage(widget.tasker.profileImage),
                 ),
                 SizedBox(width: 16.w),
                 Expanded(
@@ -216,7 +273,7 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Arben Gashi',
+                        widget.tasker.fullName,
                         style: TextStyle(
                           fontSize: 22.sp,
                           fontWeight: FontWeight.bold,

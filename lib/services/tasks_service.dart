@@ -1,4 +1,7 @@
 import 'package:fit_pro_client/models/task.dart';
+import 'package:fit_pro_client/models/task_group.dart';
+import 'package:fit_pro_client/models/tasker.dart';
+import 'package:fit_pro_client/models/user.dart';
 import 'package:fit_pro_client/services/fake_data.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -10,37 +13,7 @@ class TasksService {
   final FakeData fakeData = FakeData();
 
   // Get the current tasks data from FakeData
-  List<Task> get _currentTasksData => [
-        Task(
-          id: "1",
-          client: fakeData.fakeUser,
-          tasker: fakeData.fakeTaskers[0],
-          userLocation: const LatLng(41.3275, 19.8189),
-          taskerLocation: const LatLng(41.3317, 19.8345),
-          polylineCoordinates: [
-            const LatLng(41.3275, 19.8189),
-            const LatLng(41.3317, 19.8345),
-          ],
-          bounds: LatLngBounds(
-            southwest: const LatLng(41.3275, 19.8189),
-            northeast: const LatLng(41.3317, 19.8345),
-          ),
-          taskWorkGroup: fakeData.fakeTaskGroups[0], // Get task group from FakeData
-          date: DateTime.parse("2024-10-27"),
-          time: const TimeOfDay(hour: 11, minute: 0),
-          taskArea: "Rrethrrotullimi i Farkës, Tiranë",
-          taskPlaceDistance: 2.7,
-          userArea: "Tirane",
-          taskTools: ["Hammer", "Screwdriver"],
-          paymentMethod: "Cash",
-          promoCode: "PROMO2024",
-          taskFullAddress: "Tiranë, Rruga George W Bush, Pallati 94107, Hyrja 2",
-          taskDetails: "Kam tre tavolina që duhet të montohen",
-          taskEvaluation: "Mesatare - Vlerësuar 2-3 orë",
-          taskExtraDetails: "Profesionisti duhet të sjellë veglat e veta",
-          status: TaskStatus.actual,
-        ),
-      ];
+  List<Task> _currentTasksData = [];
 
   // Get the past tasks data from FakeData
   List<Task> get _pastTasksData => [
@@ -50,19 +23,13 @@ class TasksService {
           tasker: fakeData.fakeTaskers[1],
           userLocation: const LatLng(41.3275, 19.8189),
           taskerLocation: const LatLng(41.3317, 19.8345),
-          polylineCoordinates: [
-            const LatLng(41.3275, 19.8189),
-            const LatLng(41.3317, 19.8345),
-          ],
-          bounds: LatLngBounds(
-            southwest: const LatLng(41.3275, 19.8189),
-            northeast: const LatLng(41.3317, 19.8345),
-          ),
+          polylineCoordinates: [],
+          bounds: null,
           taskWorkGroup: fakeData.fakeTaskGroups[1],
           date: DateTime.parse("2024-05-28"),
           time: const TimeOfDay(hour: 16, minute: 0),
-          taskArea: "Lagjja Nr.1, Tirane",
-          taskPlaceDistance: 1.5,
+          taskerArea: "Lagjja Nr.1, Tirane",
+          taskPlaceDistance: '1.5',
           userArea: "Durres",
           taskTools: ["Wrench", "Pliers"],
           paymentMethod: "Credit Card",
@@ -79,19 +46,13 @@ class TasksService {
           tasker: fakeData.fakeTaskers[2],
           userLocation: const LatLng(41.3275, 19.8189),
           taskerLocation: const LatLng(41.3317, 19.8345),
-          polylineCoordinates: [
-            const LatLng(41.3275, 19.8189),
-            const LatLng(41.3317, 19.8345),
-          ],
-          bounds: LatLngBounds(
-            southwest: const LatLng(41.3275, 19.8189),
-            northeast: const LatLng(41.3317, 19.8345),
-          ),
+          polylineCoordinates: [],
+          bounds: null,
           taskWorkGroup: fakeData.fakeTaskGroups[6],
           date: DateTime.parse("2024-06-06"),
           time: const TimeOfDay(hour: 13, minute: 0),
-          taskArea: "Fresk, Tirane",
-          taskPlaceDistance: 0.8,
+          taskerArea: "Fresk, Tirane",
+          taskPlaceDistance: '0.8',
           userArea: "Tirane",
           taskTools: ["Shower installation tools"],
           paymentMethod: "Cash",
@@ -108,19 +69,13 @@ class TasksService {
           tasker: fakeData.fakeTaskers[3],
           userLocation: const LatLng(41.3275, 19.8189),
           taskerLocation: const LatLng(41.3317, 19.8345),
-          polylineCoordinates: [
-            const LatLng(41.3275, 19.8189),
-            const LatLng(41.3317, 19.8345),
-          ],
-          bounds: LatLngBounds(
-            southwest: const LatLng(41.3275, 19.8189),
-            northeast: const LatLng(41.3317, 19.8345),
-          ),
+          polylineCoordinates: [],
+          bounds: null,
           taskWorkGroup: fakeData.fakeTaskGroups[10],
           date: DateTime.parse("2024-06-07"),
           time: const TimeOfDay(hour: 14, minute: 0),
-          taskArea: "Rruga George W Bush, Tirane",
-          taskPlaceDistance: 3.2,
+          taskerArea: "Rruga George W Bush, Tirane",
+          taskPlaceDistance: '3.2',
           userArea: "Tirane",
           taskTools: ["Air conditioning tools"],
           paymentMethod: "Cash",
@@ -152,7 +107,7 @@ class TasksService {
 
   // Move a task to the correct list based on its status
   void _moveTaskToCorrectList(Task task, TaskStatus status) {
-    if (status == TaskStatus.actual) {
+    if (status == TaskStatus.accepted) {
       _currentTasksData.add(task);
     } else if (status == TaskStatus.past) {
       _pastTasksData.add(task);
@@ -175,4 +130,55 @@ class TasksService {
       logger.e("Task not found: $e");
     }
   }
+
+  void createTask({
+    required User client,
+    required Tasker tasker,
+    required LatLng userLocation,
+    required LatLng taskerLocation,
+    required DateTime date,
+    required TimeOfDay time,
+    required TaskGroup taskWorkGroup,
+    TaskStatus status = TaskStatus.accepted,
+    String? taskerArea,
+    String? taskPlaceDistance,
+    String? userArea,
+    List<String>? taskTools,
+    String? paymentMethod,
+    String? promoCode,
+    String? taskFullAddress,
+    String? taskDetails,
+    String? taskEvaluation,
+    String? taskExtraDetails,
+  }) {
+    // Create a new Task instance with auto-generated id
+    Task newTask = Task(
+      client: client,
+      tasker: tasker,
+      userLocation: userLocation,
+      taskerLocation: taskerLocation,
+      polylineCoordinates: [],
+      bounds: null,
+      taskWorkGroup: taskWorkGroup,
+      date: date,
+      time: time,
+      taskerArea: taskerArea,
+      taskPlaceDistance: taskPlaceDistance,
+      userArea: userArea,
+      taskTools: taskTools,
+      paymentMethod: paymentMethod,
+      promoCode: promoCode,
+      taskFullAddress: taskFullAddress,
+      taskDetails: taskDetails,
+      taskEvaluation: taskEvaluation,
+      taskExtraDetails: taskExtraDetails,
+      status: status,
+    );
+
+    logger.d("Task created: $newTask");
+
+    _currentTasksData.add(newTask);
+    logger.d("currentTasks: $_currentTasksData");
+  }
 }
+

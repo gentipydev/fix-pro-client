@@ -1,33 +1,23 @@
 import 'package:logger/logger.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter/services.dart';
 
 class CommunicationService {
   Logger logger = Logger();
 
-  static const platform = MethodChannel('com.example.app/phonecall');
+  Future<void> makePhoneCall(String phoneNumber) async {
+    final Uri launchUri = Uri(
+      scheme: 'tel',
+      path: phoneNumber,
+    );
 
-  Future<void> makePhoneCall(String phoneNumber, [bool enableVideo = false]) async {
-    if (phoneNumber.isEmpty) {
-      logger.e("Phone number is empty");
-      return;
-    }
-    final String scheme = enableVideo ? 'facetime' : 'tel';
-    try {
-      final bool result = await platform.invokeMethod('makePhoneCall', {
-        'phoneNumber': phoneNumber,
-        'scheme': scheme,
-      });
-      if (!result) {
-        logger.e('Could not launch $scheme:$phoneNumber');
-      }
-    } on PlatformException catch (e) {
-      logger.e("Failed to make phone call: '${e.message}'.");
+    if (await canLaunchUrl(launchUri)) {
+      await launchUrl(launchUri);
+    } else {
+      logger.e('Failed to launch phone call to $phoneNumber');
     }
   }
 
   Future<void> sendWhatsAppMessage(String message, String phoneNumber) async {
-    // Ensure that the phone number is in the full international format without any special characters like "+"
     phoneNumber = phoneNumber.replaceAll(RegExp(r"[^\d]"), "");
 
     final Uri whatsappUrl = Uri.parse("https://wa.me/$phoneNumber?text=${Uri.encodeComponent(message)}");
@@ -42,22 +32,22 @@ class CommunicationService {
     }
   }
 
-  Future<void> sendSmsMessage(String message, List<String> recipients) async {
-    if (recipients.isEmpty || message.isEmpty) {
-      logger.e("Recipients or message is empty");
-      return;
-    }
+    Future<void> sendAnSMS(String message, List<String> recipients) async {
+    final Uri smsUri = Uri(
+      scheme: 'sms',
+      path: recipients.join(','),
+      queryParameters: {
+        'body': message,
+      },
+    );
 
-    try {
-      String result = "Hello";
-      // String result = await sendSMS(
-      //   message: message,
-      //   recipients: recipients,
-      //   sendDirect: true,
-      // );
-      logger.d("SMS sent: $result");
-    } catch (e) {
-      logger.e("Failed to send SMS: $e");
+    logger.d('SMS URI: $smsUri');
+
+    if (await canLaunchUrl(smsUri)) {
+      await launchUrl(smsUri);
+    } else {
+      logger.e('Could not launch SMS');
+      throw 'Could not launch SMS';
     }
   }
 }

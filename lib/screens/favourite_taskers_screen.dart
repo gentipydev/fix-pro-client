@@ -236,7 +236,7 @@ class FavouriteTaskersScreenState extends State<FavouriteTaskersScreen> with Sin
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const TaskerProfileScreen(),
+                  builder: (context) => TaskerProfileScreen(tasker: tasker),
                 ),
               );
             },

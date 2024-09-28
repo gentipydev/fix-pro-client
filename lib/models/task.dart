@@ -3,26 +3,26 @@ import 'package:fit_pro_client/models/tasker.dart';
 import 'package:fit_pro_client/models/user.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:uuid/uuid.dart';
 
-enum TaskStatus { actual, past, accepted }
+enum TaskStatus { past, accepted }
 
 class Task {
   final String id;
   final User client;
   final Tasker tasker;
-  
+
   // Locations for building map markers and polyline
   final LatLng userLocation;
   final LatLng taskerLocation;
   final List<LatLng> polylineCoordinates;
-  final LatLngBounds bounds;
+  final LatLngBounds? bounds;
 
-  // Removed nullability of taskWorkGroup
   final TaskGroup taskWorkGroup;
   final DateTime date;
   final TimeOfDay time;
-  final String? taskArea;
-  final double? taskPlaceDistance;
+  final String? taskerArea;
+  final String? taskPlaceDistance;
   final String? userArea;
   final List<String>? taskTools;
   final String? paymentMethod; 
@@ -33,18 +33,21 @@ class Task {
   final String? taskExtraDetails;
   TaskStatus status;
 
+  static const _uuid = Uuid();
+
+  // Constructor with auto-generated id
   Task({
-    required this.id,
+    String? id,
     required this.client,
     required this.tasker,
     required this.userLocation,
     required this.taskerLocation,
     required this.polylineCoordinates,
-    required this.bounds,
+    this.bounds,  // Make bounds optional
     required this.taskWorkGroup,
     required this.date,
     required this.time,
-    this.taskArea,
+    this.taskerArea,
     this.taskPlaceDistance,
     this.userArea,
     this.taskTools,
@@ -55,7 +58,7 @@ class Task {
     this.taskEvaluation,
     this.taskExtraDetails,
     required this.status,
-  });
+  }) : id = id ?? _uuid.v4();
 
   // Factory method to create a Task from a JSON object
   factory Task.fromJson(Map<String, dynamic> json) {
@@ -71,11 +74,14 @@ class Task {
       polylineCoordinates: (json['polylineCoordinates'] as List)
           .map((coordinate) => LatLng(coordinate['latitude'], coordinate['longitude']))
           .toList(),
-      bounds: LatLngBounds(
-        southwest: LatLng(json['bounds']['southwest']['latitude'], json['bounds']['southwest']['longitude']),
-        northeast: LatLng(json['bounds']['northeast']['latitude'], json['bounds']['northeast']['longitude']),
-      ),
       
+      bounds: json['bounds'] != null
+        ? LatLngBounds(
+            southwest: LatLng(json['bounds']['southwest']['latitude'], json['bounds']['southwest']['longitude']),
+            northeast: LatLng(json['bounds']['northeast']['latitude'], json['bounds']['northeast']['longitude']),
+          )
+        : null,
+
       taskWorkGroup: TaskGroup.fromJson(json['taskWorkGroup']),
       date: DateTime.parse(json['date']),
       
@@ -85,8 +91,8 @@ class Task {
         minute: int.parse(json['time'].split(':')[1]),
       ),
       
-      taskArea: json['taskArea'],
-      taskPlaceDistance: json['taskPlaceDistance']?.toDouble(),
+      taskerArea: json['taskArea'],
+      taskPlaceDistance: json['taskPlaceDistance'],
       userArea: json['userArea'],
       taskTools: (json['taskTools'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
       paymentMethod: json['paymentMethod'],
@@ -104,7 +110,6 @@ class Task {
     return {
       'id': id,
       
-      // Serialize client and tasker as User and Tasker models
       'client': client.toJson(),
       'tasker': tasker.toJson(),
       
@@ -113,19 +118,20 @@ class Task {
       'polylineCoordinates': polylineCoordinates
           .map((coordinate) => {'latitude': coordinate.latitude, 'longitude': coordinate.longitude})
           .toList(),
-      'bounds': {
-        'southwest': {'latitude': bounds.southwest.latitude, 'longitude': bounds.southwest.longitude},
-        'northeast': {'latitude': bounds.northeast.latitude, 'longitude': bounds.northeast.longitude},
+      
+      // Only serialize bounds if it is not null
+      if (bounds != null) 'bounds': {
+        'southwest': {'latitude': bounds!.southwest.latitude, 'longitude': bounds!.southwest.longitude},
+        'northeast': {'latitude': bounds!.northeast.latitude, 'longitude': bounds!.northeast.longitude},
       },
       
-      // taskWorkGroup is now mandatory, so no nullable check here
       'taskWorkGroup': taskWorkGroup.toJson(),
       'date': date.toIso8601String(),
       
       // Serialize TimeOfDay as a string in "HH:mm" format
       'time': '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
 
-      'taskArea': taskArea,
+      'taskArea': taskerArea,
       'taskPlaceDistance': taskPlaceDistance,
       'userArea': userArea,
       'taskTools': taskTools,

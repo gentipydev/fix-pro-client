@@ -116,13 +116,13 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
     if (searchFromCurrentPosition) {
       // Use the local currentLocation if available, otherwise use currentSearchLocation from TaskStateProvider
       targetLocation = currentLocation ?? taskStateProvider.currentSearchLocation;
-      
-      if (targetLocation == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Vendodhja nuk është e disponueshme'))
-        );
-        return;
-      }
+
+    if (targetLocation == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vendodhja nuk është e disponueshme'))
+      );
+      return;
+    }
 
       // Save the current location search details
       taskStateProvider.setSearchDetails(
@@ -174,6 +174,7 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
 
     // Generate a fake tasker location near the target location
     LatLng fakeTaskerLocation = _generateFakeTaskerLocation(targetLocation);
+    taskStateProvider.setTaskerLocation(fakeTaskerLocation);
 
     // Start the 10-second countdown
     Future.delayed(const Duration(seconds: 10), () async {
@@ -434,10 +435,6 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
             child: Consumer<MapProvider>(
               builder: (context, mapProvider, child) {
                 return GoogleMap(
-                  padding: EdgeInsets.only(
-                    top: 100,
-                    bottom: taskState == TaskState.profileView ? 260.h : 0,
-                  ),
                   initialCameraPosition: CameraPosition(
                     target: currentLocation ?? const LatLng(41.3275, 19.8189),
                     zoom: 15.5,

@@ -1,5 +1,4 @@
 import 'dart:math';
-
 import 'package:fit_pro_client/models/review.dart';
 import 'package:fit_pro_client/models/task_group.dart';
 import 'package:fit_pro_client/models/tasker.dart';
@@ -15,6 +14,7 @@ class FakeData {
       title: 'Montim mobiliesh',
       description: 'Montimi i mobilieve të ndryshme',
       feePerHour: 2000,
+      imagePath: 'assets/images/montim_mobiliesh.jpg',
       isActive: true,
     ),
     TaskGroup(
@@ -22,6 +22,7 @@ class FakeData {
       title: 'Patinime muresh',
       description: 'Patinim dhe përgatitje e mureve',
       feePerHour: 1800,
+      imagePath: 'assets/images/patinime_muresh.jpg',
       isActive: true,
     ),
     TaskGroup(
@@ -29,6 +30,7 @@ class FakeData {
       title: 'Lyerje muresh',
       description: 'Shërbim profesional për lyerjen e mureve',
       feePerHour: 1600,
+      imagePath: 'assets/images/lyerje_muresh.jpg',
       isActive: true,
     ),
     TaskGroup(
@@ -36,6 +38,7 @@ class FakeData {
       title: 'Punime në kopesht',
       description: 'Punime dhe mirëmbajtje për kopshtin',
       feePerHour: 2200,
+      imagePath: 'assets/images/punime_ne_kopesht.jpg',
       isActive: true,
     ),
     TaskGroup(
@@ -43,6 +46,7 @@ class FakeData {
       title: 'Montime Dyer/Dritare',
       description: 'Montimi i dyerve dhe dritareve',
       feePerHour: 2400,
+      imagePath: 'assets/images/montim_dyer_dritare.jpg',
       isActive: true,
     ),
     TaskGroup(
@@ -50,6 +54,7 @@ class FakeData {
       title: 'Montim Kondicioneri',
       description: 'Instalim dhe mirëmbajtje e kondicionerëve',
       feePerHour: 2500,
+      imagePath: 'assets/images/montim_kondicioneri.jpg',
       isActive: true,
     ),
     TaskGroup(
@@ -57,6 +62,7 @@ class FakeData {
       title: 'Pastrim shtepie',
       description: 'Shërbime për pastrimin e shtëpisë',
       feePerHour: 1500,
+      imagePath: 'assets/images/pastrim_shtepie.jpg',
       isActive: true,
     ),
     TaskGroup(
@@ -64,6 +70,7 @@ class FakeData {
       title: 'Pastrim zyre',
       description: 'Pastrimi i zyrave dhe ambienteve të punës',
       feePerHour: 1600,
+      imagePath: 'assets/images/pastrim_zyre.jpg',
       isActive: true,
     ),
     TaskGroup(
@@ -71,6 +78,7 @@ class FakeData {
       title: 'Punime hidraulike',
       description: 'Shërbime për instalime dhe riparime hidraulike',
       feePerHour: 2300,
+      imagePath: 'assets/images/punime_hidraulike.jpg',
       isActive: true,
     ),
     TaskGroup(
@@ -78,6 +86,7 @@ class FakeData {
       title: 'Punime elektrike',
       description: 'Punime dhe instalime elektrike',
       feePerHour: 2500,
+      imagePath: 'assets/images/punime_elektrike.jpg',
       isActive: true,
     ),
     TaskGroup(
@@ -85,6 +94,7 @@ class FakeData {
       title: 'Punime druri',
       description: 'Shërbime për ndërtimin dhe riparimin e objekteve prej druri',
       feePerHour: 2600,
+      imagePath: 'assets/images/punime_druri.jpg',
       isActive: true,
     ),
     TaskGroup(
@@ -92,6 +102,7 @@ class FakeData {
       title: 'Vjelje ullinjsh',
       description: 'Shërbime për vjeljen e ullinjve',
       feePerHour: 1400,
+      imagePath: 'assets/images/vjelje_ullinjsh.jpg',
       isActive: true,
     ),
     TaskGroup(
@@ -99,6 +110,7 @@ class FakeData {
       title: 'Karrotrec',
       description: 'Shërbime karrotreku për transport dhe ndihmë teknike',
       feePerHour: 2800,
+      imagePath: 'assets/images/karrotrec.jpg',
       isActive: true,
     ),
     TaskGroup(
@@ -106,6 +118,7 @@ class FakeData {
       title: 'Montim kamerash',
       description: 'Instalimi dhe konfigurimi i kamerave të sigurisë',
       feePerHour: 2700,
+      imagePath: 'assets/images/montim_kamerash.jpg',
       isActive: true,
     ),
     TaskGroup(
@@ -113,6 +126,7 @@ class FakeData {
       title: 'Riparim dushi',
       description: 'Riparim dhe instalim i pajisjeve të dushit',
       feePerHour: 2100,
+      imagePath: 'assets/images/riparime_banjo.jpg',
       isActive: true,
     ),
     TaskGroup(
@@ -120,6 +134,7 @@ class FakeData {
       title: 'Instalim paneli',
       description: 'Instalim i paneleve diellore për energji',
       feePerHour: 3200,
+      imagePath: 'assets/images/instalim_panelesh_diellore.jpg',
       isActive: true,
     ),
     TaskGroup(
@@ -127,6 +142,7 @@ class FakeData {
       title: 'Riparime çatie',
       description: 'Riparim dhe mirëmbajtje e çative',
       feePerHour: 2900,
+      imagePath: 'assets/images/riparim_catie.jpg',
       isActive: true,
     ),
     TaskGroup(
@@ -134,6 +150,7 @@ class FakeData {
       title: 'Pastrim oxhaqesh',
       description: 'Shërbime për pastrimin e oxhaqeve',
       feePerHour: 1500,
+      imagePath: 'assets/images/pastrim_oxhaqesh.jpg',
       isActive: true,
     ),
     TaskGroup(
@@ -141,6 +158,7 @@ class FakeData {
       title: 'Punime me gips',
       description: 'Instalim dhe dekorim me gips',
       feePerHour: 2200,
+      imagePath: 'assets/images/punime_gipsi.jpg',
       isActive: true,
     ),
     TaskGroup(
@@ -148,6 +166,7 @@ class FakeData {
       title: 'Instalim ndriçimi',
       description: 'Instalimi i sistemeve të ndriçimit',
       feePerHour: 2400,
+      imagePath: 'assets/images/instalim_ndricimi.jpg',
       isActive: true,
     ),
     TaskGroup(
@@ -155,6 +174,7 @@ class FakeData {
       title: 'Shtrim pllakash',
       description: 'Shtrim dhe riparim pllakash dyshemeje dhe muri',
       feePerHour: 2000,
+      imagePath: 'assets/images/shtrim_pllakash.jpg',
       isActive: true,
     ),
     TaskGroup(
@@ -162,6 +182,7 @@ class FakeData {
       title: 'Pastrim pishinash',
       description: 'Shërbime për pastrimin dhe mirëmbajtjen e pishinave',
       feePerHour: 2500,
+      imagePath: 'assets/images/pastrim_pishinash.jpg',
       isActive: true,
     ),
     TaskGroup(
@@ -169,6 +190,7 @@ class FakeData {
       title: 'Pastrim xhamash',
       description: 'Pastrimi profesional i xhamave të dritareve dhe dyerve',
       feePerHour: 1600,
+      imagePath: 'assets/images/pastrim_dyer_dritare.jpg',
       isActive: true,
     ),
     TaskGroup(
@@ -176,6 +198,7 @@ class FakeData {
       title: 'Larje tapeti',
       description: 'Shërbime për larjen dhe pastrimin e tapetave',
       feePerHour: 1300,
+      imagePath: 'assets/images/larje_tapeti.jpg',
       isActive: true,
     ),
   ];

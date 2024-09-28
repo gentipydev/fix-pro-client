@@ -7,6 +7,7 @@ import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:logger/logger.dart';
 import 'package:http/http.dart' as http;
+import 'package:geolocator/geolocator.dart';
 
 class MapProvider with ChangeNotifier {
   Logger logger = Logger();
@@ -44,6 +45,28 @@ class MapProvider with ChangeNotifier {
     } catch (e) {
       logger.e('Failed to fetch route: $e');
       return null; // Return null if fetching fails
+    }
+  }
+
+  Future<Map<String, dynamic>?> fetchPastTaskRouteFromOSRMApi(LatLng start, LatLng end) async {
+    try {
+      // Fetch route coordinates from OSRM API
+      List<LatLng> routeCoordinates = await getRouteCoordinates(start, end);
+
+      if (routeCoordinates.isEmpty) {
+        return null;
+      }
+
+      LatLngBounds bounds = _calculateLatLngBounds(routeCoordinates);
+      
+      // Return both the bounds and the route coordinates
+      return {
+        'bounds': bounds,
+        'routeCoordinates': routeCoordinates,
+      };
+    } catch (e) {
+      logger.e('Failed to fetch route: $e');
+      return null;
     }
   }
 
@@ -182,5 +205,61 @@ class MapProvider with ChangeNotifier {
     } else {
       throw Exception('Failed to fetch coordinates');
     }
+  }
+
+  Future<String> getAddressFromLatLng(LatLng location, {bool isFullAddress = true}) async {
+    final String url =
+        'https://nominatim.openstreetmap.org/reverse?lat=${location.latitude}&lon=${location.longitude}&format=json';
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+
+      // Check if the address field is available in the response
+      if (data.containsKey('address')) {
+        final address = data['address'];
+
+        // Extract the required fields
+        final String houseNumber = address['house_number'] ?? '';
+        final String road = address['road'] ?? '';
+        final String suburb = address['suburb'] ?? '';
+        final String city = address['city'] ?? address['town'] ?? address['village'] ?? '';
+        final String state = address['state'] ?? '';
+        final String country = address['country'] ?? '';
+
+        // Create a list of non-empty address components
+        if (isFullAddress) {
+          final List<String> fullAddressParts = [
+            if (houseNumber.isNotEmpty) houseNumber,
+            if (road.isNotEmpty) road,
+            if (suburb.isNotEmpty) suburb,
+            if (city.isNotEmpty) city,
+            if (state.isNotEmpty) state,
+            if (country.isNotEmpty) country,
+          ];
+
+          return fullAddressParts.join(', ');
+        } else {
+          final List<String> shortAddressParts = [
+            if (road.isNotEmpty) road,
+            if (city.isNotEmpty) city,
+          ];
+
+          return shortAddressParts.join(', ');
+        }
+      } else {
+        return 'No address available';
+      }
+    } else {
+      throw Exception('Failed to fetch the address');
+    }
+  }
+
+  double calculateDistance(LatLng start, LatLng end) {
+    return Geolocator.distanceBetween(
+      start.latitude, start.longitude, 
+      end.latitude, end.longitude
+    );
   }
 }
