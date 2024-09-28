@@ -2,6 +2,7 @@ import 'package:fit_pro_client/providers/task_state_provider.dart';
 import 'package:fit_pro_client/providers/tasks_provider.dart';
 import 'package:fit_pro_client/screens/favourite_taskers_screen.dart';
 import 'package:fit_pro_client/screens/profile_screen.dart';
+import 'package:fit_pro_client/screens/search_screen/search_screen.dart';
 import 'package:fit_pro_client/screens/tasks_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fit_pro_client/utils/constants.dart';
@@ -115,7 +116,7 @@ class HomeContent extends StatefulWidget {
 
 class _HomeContentState extends State<HomeContent> {
   Logger logger = Logger();
-  FakeData fakeData = FakeData(); // Access the FakeData instance
+  FakeData fakeData = FakeData(); 
   List<TaskGroup> filteredSuggestions = [];
   final TextEditingController _controller = TextEditingController();
 
@@ -250,7 +251,10 @@ class _HomeContentState extends State<HomeContent> {
                               _controller.clear();
                               filteredSuggestions.clear();
                             });
-                            Navigator.pushNamed(context, '/search-screen');
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const SearchScreen()),
+                            );
                           },
                         );
                       },
@@ -341,9 +345,10 @@ class _HomeContentState extends State<HomeContent> {
         return GestureDetector(
           onTap: () {
             context.read<TaskStateProvider>().setSelectedTaskGroup(category);
-            
-            // Navigate to the search screen
-            Navigator.pushNamed(context, '/search-screen');
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SearchScreen()),
+            );
           },
           child: Column(
             children: [

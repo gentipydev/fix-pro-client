@@ -1,5 +1,6 @@
 import 'package:fit_pro_client/providers/map_provider.dart';
 import 'package:fit_pro_client/providers/task_state_provider.dart';
+import 'package:fit_pro_client/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fit_pro_client/utils/constants.dart';
@@ -90,8 +91,11 @@ void showCancelDialog(BuildContext context) {
                   final mapProvider = Provider.of<MapProvider>(context, listen: false);
                   taskStateProvider.resetTask(); 
                   mapProvider.clearPolylines();
-                  Navigator.of(context).pop();
-                  Navigator.of(context).pushReplacementNamed('/home');
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const HomeScreen()),
+                    (Route<dynamic> route) => false,
+                  );
                 },
                 child: Text(
                   'Po, jam i sigurt',

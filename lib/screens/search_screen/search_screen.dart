@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:another_flushbar/flushbar.dart';
 import 'package:fit_pro_client/providers/map_provider.dart';
 import 'package:fit_pro_client/providers/task_state_provider.dart';
+import 'package:fit_pro_client/screens/home_screen.dart';
 import 'package:fit_pro_client/screens/search_screen/cancel_task_dialog.dart';
 import 'package:fit_pro_client/screens/search_screen/profile_container.dart';
 import 'package:fit_pro_client/screens/search_screen/search_section.dart';
@@ -117,13 +118,6 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
       // Use the local currentLocation if available, otherwise use currentSearchLocation from TaskStateProvider
       targetLocation = currentLocation ?? taskStateProvider.currentSearchLocation;
 
-    if (targetLocation == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vendodhja nuk është e disponueshme'))
-      );
-      return;
-    }
-
       // Save the current location search details
       taskStateProvider.setSearchDetails(
         fromCurrentPosition: true,
@@ -169,7 +163,7 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
     });
 
     // Center the map on the location (current or searched)
-    _centerMapOnMarker(targetLocation);
+    _centerMapOnMarker(targetLocation!);
     _toggleMapInteraction(true); // Disable map gestures
 
     // Generate a fake tasker location near the target location
@@ -421,7 +415,11 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
       if (taskState == TaskState.accepted) {
         taskStateProvider.resetTask(); 
         mapProvider.clearPolylines();
-        Navigator.of(context).pushReplacementNamed('/home');
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          (Route<dynamic> route) => false,
+        );
       } 
       else if (taskState == TaskState.searching || taskState == TaskState.profileView) {
         showCancelDialog(context);

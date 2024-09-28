@@ -1,3 +1,5 @@
+import 'package:fit_pro_client/screens/home_screen.dart';
+import 'package:fit_pro_client/screens/login_screen.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:fit_pro_client/utils/validators.dart';
 import 'package:fit_pro_client/widgets/custom_datefield.dart';
@@ -337,7 +339,10 @@ final GlobalKey<InternationalPhoneInputState> internationalPhoneInputKey = Globa
                                         isSubmitting = false; // Hide loading indicator
                                       });
 
-                                      Navigator.pushNamed(context, '/home');
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => const HomeScreen()),
+                                    );
                                     } else {
                                       if (mounted) {
                                         setState(() {
@@ -444,7 +449,10 @@ final GlobalKey<InternationalPhoneInputState> internationalPhoneInputKey = Globa
                                     SizedBox(width: 12.w),
                                     GestureDetector(
                                       onTap: () {
-                                        Navigator.pushNamed(context, '/login');
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(builder: (context) => const LoginScreen()),
+                                        );
                                       },
                                       child: Text(
                                         "Logohuni",

@@ -1,5 +1,7 @@
 import 'dart:ui' as ui;
 import 'package:fit_pro_client/providers/login_validation_provider.dart';
+import 'package:fit_pro_client/screens/home_screen.dart';
+import 'package:fit_pro_client/screens/register_screen.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:fit_pro_client/utils/validators.dart';
 import 'package:fit_pro_client/widgets/custom_simple_textfield.dart';
@@ -188,7 +190,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               isLoading = false;
                             });
 
-                            Navigator.pushNamed(context, '/home');
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const HomeScreen()),
+                          );
                           } else {
                             if (mounted) {
                               setState(() {
@@ -293,7 +298,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           SizedBox(width: 14.w),
                           GestureDetector(
                             onTap: () {
-                              Navigator.pushNamed(context, '/register');
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                              );
                             },
                             child: Text(
                               'Rregjistrohuni',
