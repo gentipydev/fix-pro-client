@@ -58,7 +58,7 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
       String taskerArea = await mapProvider.getAddressFromLatLng(taskerLocation, isFullAddress: false);
       String taskFullAddress = await mapProvider.getAddressFromLatLng(taskerLocation, isFullAddress: true);
 
-      double taskerPlaceDistance = mapProvider.calculateDistance(userLocation, taskerLocation);
+      double taskerPlaceDistance = await mapProvider.calculateDistance(userLocation, taskerLocation);
       double distanceInKm = taskerPlaceDistance / 1000;
       String formattedDistance = distanceInKm.toStringAsFixed(1);
 

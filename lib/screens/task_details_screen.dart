@@ -49,7 +49,7 @@ class TaskDetailsScreenState extends State<TaskDetailsScreen> {
       // If bounds are not provided, fetch them using MapProvider
       LatLngBounds? effectiveBounds = bounds;
       if (effectiveBounds == null) {
-        final result = await Provider.of<MapProvider>(context, listen: false).fetchPastTaskRouteFromOSRMApi(userPosition, taskerPosition);
+        final result = await Provider.of<MapProvider>(context, listen: false).fetchPastTaskRoute(userPosition, taskerPosition);
 
         if (result != null) {
           effectiveBounds = result['bounds'];

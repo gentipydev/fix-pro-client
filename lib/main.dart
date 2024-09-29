@@ -17,6 +17,7 @@ import 'package:fit_pro_client/providers/map_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await findSystemLocale();
   await initializeDateFormatting('sq', null);
 

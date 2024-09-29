@@ -1,8 +1,7 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.fixpro.tasker">
     <application
-        android:label="fit_pro_client"
+        android:label="fix_pro_tasker"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 
@@ -40,8 +39,9 @@
             android:value="2" />
     </application>
 
+    <!-- Required permissions -->
     <uses-permission android:name="android.permission.INTERNET"/>
-    
+
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
          https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.

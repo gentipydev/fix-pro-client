@@ -22,8 +22,8 @@ class TaskerMapScreenState extends State<TaskerMapScreen> {
   GoogleMapController? mapController;
   Set<Marker> markers = {};
   Timer? _timer;
-  int _currentPolylineIndex = 0;
-  LatLng _taskerPosition = const LatLng(41.333688, 19.846087);
+  // int _currentPolylineIndex = 0;
+  final LatLng _taskerPosition = const LatLng(41.333688, 19.846087);
   bool isMoving = false;
   BitmapDescriptor? taskerIcon;
 
@@ -82,31 +82,31 @@ class TaskerMapScreenState extends State<TaskerMapScreen> {
   }
 
   // Function to simulate tasker movement along the polyline
-  void _startTaskerMovement(List<LatLng> polylinePoints) {
-    if (isMoving) return; // Prevent multiple movements at the same time
-    isMoving = true;
+  // void _startTaskerMovement(List<LatLng> polylinePoints) {
+  //   if (isMoving) return; // Prevent multiple movements at the same time
+  //   isMoving = true;
 
-    _timer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
-      if (_currentPolylineIndex < polylinePoints.length - 1) {
-        setState(() {
-          // Move to the next point in the polyline
-          _currentPolylineIndex++;
-          _taskerPosition = polylinePoints[_currentPolylineIndex];
+  //   _timer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
+  //     if (_currentPolylineIndex < polylinePoints.length - 1) {
+  //       setState(() {
+  //         // Move to the next point in the polyline
+  //         _currentPolylineIndex++;
+  //         _taskerPosition = polylinePoints[_currentPolylineIndex];
 
-          // Update the polyline by removing the traveled part
-          final mapProvider = Provider.of<MapProvider>(context, listen: false);
-          mapProvider.updatePolyline(polylinePoints.sublist(_currentPolylineIndex));
+  //         // Update the polyline by removing the traveled part
+  //         final mapProvider = Provider.of<MapProvider>(context, listen: false);
+  //         mapProvider.updatePolyline(polylinePoints.sublist(_currentPolylineIndex));
 
-          // Update the tasker marker
-          _updateTaskerMarker();
-        });
-      } else {
-        timer.cancel();
-        isMoving = false;
-        _showArrivalConfirmation(context);
-      }
-    });
-  }
+  //         // Update the tasker marker
+  //         _updateTaskerMarker();
+  //       });
+  //     } else {
+  //       timer.cancel();
+  //       isMoving = false;
+  //       _showArrivalConfirmation(context);
+  //     }
+  //   });
+  // }
 
   // Function to update the tasker marker position with the preloaded custom image
   void _updateTaskerMarker() {

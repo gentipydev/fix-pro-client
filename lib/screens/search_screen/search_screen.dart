@@ -7,7 +7,6 @@ import 'package:fit_pro_client/screens/search_screen/cancel_task_dialog.dart';
 import 'package:fit_pro_client/screens/search_screen/profile_container.dart';
 import 'package:fit_pro_client/screens/search_screen/search_section.dart';
 import 'package:fit_pro_client/utils/constants.dart';
-import 'package:fit_pro_client/utils/fake_addresses.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -173,17 +172,18 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
     // Start the 10-second countdown
     Future.delayed(const Duration(seconds: 10), () async {
       if (!mounted) return;
+      
+      // Fetch and draw the polyline between user and fake tasker location
+      final mapProvider = Provider.of<MapProvider>(context, listen: false);
+      LatLngBounds? bounds = await mapProvider.fetchRoute(targetLocation!, fakeTaskerLocation);
+
+      taskStateProvider.setTaskState(TaskState.profileView);
+      _toggleMapInteraction(false); // Re-enable map gestures
+
       setState(() {
         _statusText = "Urime! Ky profesionist ka pranuar punen tuaj\nJu mund ta pranoni punen direkt ose pasi keni pare profilin e tij mund ta pranoni apo refuzoni atë...";
         _isWaiting = false;
       });
-
-      // Fetch and draw the polyline between user and fake tasker location
-      final mapProvider = Provider.of<MapProvider>(context, listen: false);
-      LatLngBounds? bounds = await mapProvider.fetchRouteFromOSRMApi(targetLocation!, fakeTaskerLocation);
-
-      taskStateProvider.setTaskState(TaskState.profileView);
-      _toggleMapInteraction(false); // Re-enable map gestures
 
       // Create the route and load tasker marker
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -194,7 +194,6 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
       });
     });
   }
-
 
   void _animateCameraToBounds(LatLngBounds? bounds) {
     if (mapController != null) {
@@ -236,16 +235,27 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
     }
   }
 
-  void _searchNewLocation(String query) {
-    logger.d('Searching for new location: $query');
-    setState(() {
-      _filteredAddresses = simplifiedAddresses.where((address) =>
-              address.toLowerCase().contains(query.toLowerCase())).toList();
-    });
+  // Search and filter addresses
+  void _searchNewLocation(String query) async {
+    final mapProvider = Provider.of<MapProvider>(context, listen: false);
+    
+    if (query.isNotEmpty) {
+      // Fetch suggestions from the Google Places API
+      await mapProvider.fetchAddresses(query);
+
+      setState(() {
+        // Update filtered addresses with the latest fetched addresses
+        _filteredAddresses = mapProvider.fetchedAddresses;
+      });
+    } else {
+      // Clear suggestions if the search input is empty
+      setState(() {
+        _filteredAddresses.clear();
+      });
+    }
   }
 
   void _selectLocation(String address) {
-    logger.d('Location selected: $address');
     setState(() {
       searchController.text = address;
       _isAddressSelected = true;
