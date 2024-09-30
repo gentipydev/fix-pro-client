@@ -18,6 +18,8 @@ import 'package:fit_pro_client/providers/map_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  increaseCacheSize();
+
   await findSystemLocale();
   await initializeDateFormatting('sq', null);
 
@@ -35,6 +37,12 @@ void main() async {
       child: const MyApp(),
     ),
   );
+}
+
+// Function to increase image cache size globally
+void increaseCacheSize() {
+  PaintingBinding.instance.imageCache.maximumSize = 200;  // Cache up to 200 images
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 200 * 1024 * 1024;  // Cache up to 200 MB
 }
 
 class MyApp extends StatelessWidget {

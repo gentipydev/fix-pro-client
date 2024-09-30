@@ -1,6 +1,5 @@
 import 'package:fit_pro_client/models/tasker.dart';
 import 'package:fit_pro_client/screens/add_task_details_screen.dart';
-import 'package:fit_pro_client/services/fake_data.dart';
 import 'package:flutter/material.dart';
 import 'package:fit_pro_client/providers/task_state_provider.dart';
 import 'package:fit_pro_client/screens/tasker_profile_screen.dart';
@@ -10,12 +9,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
 class ProfileContainer extends StatefulWidget {
-  const ProfileContainer({super.key});
+  final Tasker? tasker;
+
+  const ProfileContainer({super.key, required this.tasker});
 
   @override
   ProfileContainerState createState() => ProfileContainerState();
 }
-
 class ProfileContainerState extends State<ProfileContainer> with TickerProviderStateMixin {
   late AnimationController _controller;
 
@@ -37,8 +37,6 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
   @override
   Widget build(BuildContext context) {
     final taskState = Provider.of<TaskStateProvider>(context).taskState;
-    final FakeData fakeData = FakeData();
-    final Tasker firstTasker = fakeData.fakeTaskers[0];
 
     // Trigger the animation when state changes to accepted
     if (taskState == TaskState.accepted) {
@@ -65,7 +63,7 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
               SizedBox(width: 8.w),
               Expanded( 
                 child: Text(
-                  'Rrethrrotullimi i Farkës, Tiranë',
+                  widget.tasker?.taskerArea ?? '',
                   style: TextStyle(
                     color: AppColors.black,
                     fontSize: 16.sp,
@@ -77,7 +75,7 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
           ),
           SizedBox(height: 4.h),
           Text(
-            'Rreth 0.7 km larg',
+            'Rreth 0.4 km larg',
             style: TextStyle(
               fontSize: 14.sp,
               color: AppColors.grey700,
@@ -96,7 +94,7 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                           Text(
-                          'Arben G.',
+                          widget.tasker?.fullName ?? '',
                           style: TextStyle(
                             fontSize: 18.sp,
                             color: AppColors.grey700,
@@ -118,7 +116,7 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
-                          '5',
+                          widget.tasker?.rating.toString() ?? '',
                           style: TextStyle(
                             fontSize: 18.sp,
                             color: AppColors.grey700,
@@ -133,7 +131,7 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
                         ),
                         SizedBox(width: 4.w),
                         Text(
-                          '(3 vlerësime)',
+                          '(${widget.tasker?.reviews.length} vlerësime)',
                           style: TextStyle(
                             fontSize: 14.sp,
                             color: AppColors.grey700,
@@ -164,7 +162,7 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => TaskerProfileScreen(tasker: firstTasker),
+                                        builder: (context) => TaskerProfileScreen(tasker: widget.tasker!),
                                       ),
                                     );
                                   },
@@ -213,8 +211,8 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
                   ],
                 ),
               ),
-              const ExpandableFab(
-                phoneNumber: '+355696443833',
+              ExpandableFab(
+                phoneNumber: widget.tasker?.contactInfo ?? '',
               ),
             ],
           ),

@@ -62,10 +62,12 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
       double distanceInKm = taskerPlaceDistance / 1000;
       String formattedDistance = distanceInKm.toStringAsFixed(1);
 
+      Tasker currentTasker = fakeData.fakeTaskers[taskStateProvider.currentTaskerIndex];
+
       // Create the task using the retrieved locations and tasker area
       tasksProvider.createTask(
         client: fakeData.fakeUser,
-        tasker: fakeData.fakeTaskers[0],
+        tasker: currentTasker,
         userLocation: userLocation,
         taskerLocation: taskerLocation,
         date: DateTime.now(),
@@ -110,6 +112,10 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
     taskStateProvider.rejectTask();
     mapProvider.clearPolylines();
 
+    // Increment the tasker index, cycle through available taskers
+    final fakeData = FakeData();
+    taskStateProvider.incrementTaskerIndex(fakeData.fakeTaskers.length);
+
     setState(() {
       isLoadingReject = false;
     });
@@ -118,7 +124,7 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
     final bool searchFromCurrentPosition = taskStateProvider.searchFromCurrentPosition;
     final LatLng? currentSearchLocation = taskStateProvider.currentSearchLocation;
     final String? searchedAddress = taskStateProvider.searchedAddress;
-
+    
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(

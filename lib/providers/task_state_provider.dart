@@ -17,6 +17,7 @@ class TaskStateProvider with ChangeNotifier {
   String? _searchedAddress;    
   bool _searchFromCurrentPosition = true;
   TaskGroup? _selectedTaskGroup;
+  int _currentTaskerIndex = 0;
 
   TaskState get taskState => _taskState;
   bool get isLocationSelected => _isLocationSelected;
@@ -25,6 +26,17 @@ class TaskStateProvider with ChangeNotifier {
   String? get searchedAddress => _searchedAddress;
   bool get searchFromCurrentPosition => _searchFromCurrentPosition;
   TaskGroup? get selectedTaskGroup => _selectedTaskGroup;
+  int get currentTaskerIndex => _currentTaskerIndex;
+
+  void resetTaskerIndex() {
+    _currentTaskerIndex = 0;
+    notifyListeners();
+  }
+
+  void incrementTaskerIndex(int maxIndex) {
+    _currentTaskerIndex = (_currentTaskerIndex + 1) % maxIndex;
+    notifyListeners();
+  }
 
   // Set the task state based on user actions
   void setTaskState(TaskState state) {

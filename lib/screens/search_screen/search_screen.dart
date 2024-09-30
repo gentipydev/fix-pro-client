@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:another_flushbar/flushbar.dart';
+import 'package:fit_pro_client/models/tasker.dart';
 import 'package:fit_pro_client/providers/map_provider.dart';
 import 'package:fit_pro_client/providers/task_state_provider.dart';
 import 'package:fit_pro_client/screens/home_screen.dart';
 import 'package:fit_pro_client/screens/search_screen/cancel_task_dialog.dart';
 import 'package:fit_pro_client/screens/search_screen/profile_container.dart';
 import 'package:fit_pro_client/screens/search_screen/search_section.dart';
+import 'package:fit_pro_client/services/fake_data.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -49,6 +51,7 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
   bool _mapInteractionDisabled = false;
   bool _isWaiting = false;
   bool _isAddressSelected = false;
+  Tasker? _currentTasker;
 
   @override
   void initState() {
@@ -70,18 +73,16 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.searchFromCurrentPosition ?? true) {
         if (widget.currentSearchLocation != null) {
+          _getCurrentLocationAndInitializeMap();
           _performSearch(searchFromCurrentPosition: true);
         } else {
           _getCurrentLocationAndInitializeMap();
         }
       } 
-      // If searchFromCurrentPosition is false, we use the searched address
       else if (widget.searchedAddress != null && widget.searchedAddress!.isNotEmpty) {
         _performSearch(searchFromCurrentPosition: false, address: widget.searchedAddress);
       }
     });
-
-    _getCurrentLocationAndInitializeMap();
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -107,7 +108,7 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
     });
   }
 
-  Future<void> _performSearch({bool searchFromCurrentPosition = true, String? address}) async {
+Future<void> _performSearch({bool searchFromCurrentPosition = true, String? address}) async {
     LatLng? targetLocation;
 
     // Get the TaskStateProvider to retrieve search details if necessary
@@ -172,10 +173,19 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
     // Start the 10-second countdown
     Future.delayed(const Duration(seconds: 10), () async {
       if (!mounted) return;
-      
-      // Fetch and draw the polyline between user and fake tasker location
       final mapProvider = Provider.of<MapProvider>(context, listen: false);
-      LatLngBounds? bounds = await mapProvider.fetchRoute(targetLocation!, fakeTaskerLocation);
+
+      // Get the current tasker based on the index
+      final fakeData = FakeData();
+      final tasker = fakeData.fakeTaskers[taskStateProvider.currentTaskerIndex];
+
+      String? taskerArea = await mapProvider.getAddressFromLatLng(fakeTaskerLocation, isFullAddress: false);
+
+      // Set the current Tasker in the state
+      setState(() {
+        _currentTasker = tasker;
+        tasker.taskerArea = taskerArea;
+      });
 
       taskStateProvider.setTaskState(TaskState.profileView);
       _toggleMapInteraction(false); // Re-enable map gestures
@@ -184,6 +194,8 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
         _statusText = "Urime! Ky profesionist ka pranuar punen tuaj\nJu mund ta pranoni punen direkt ose pasi keni pare profilin e tij mund ta pranoni apo refuzoni atë...";
         _isWaiting = false;
       });
+
+      LatLngBounds? bounds = await mapProvider.fetchRoute(targetLocation!, fakeTaskerLocation);
 
       // Create the route and load tasker marker
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -267,7 +279,7 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
     // Load tasker icon
     final taskerIconLoaded = await BitmapDescriptor.asset(
       const ImageConfiguration(size: Size(90, 90)),
-      'assets/images/tasker3.png',
+      _currentTasker?.mapProfileImage ?? 'assets/images/tasker3.png'
     );
 
     // Load default user location icon
@@ -525,7 +537,7 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
             left: 0,
             right: 0,
             bottom: taskState == TaskState.profileView || taskState == TaskState.accepted ? 0 : -400.h,
-            child: const ProfileContainer(),
+            child: ProfileContainer(tasker: _currentTasker),
           ),
         ],
       ),

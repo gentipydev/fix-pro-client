@@ -17,6 +17,7 @@ class Tasker {
   final double averagePrice;
   final Availability availability;
   final int totalNumberTasks;
+  String? taskerArea;
 
   Tasker({
     required this.id,
@@ -33,6 +34,7 @@ class Tasker {
     required this.averagePrice,
     required this.availability,
     required this.totalNumberTasks,
+    this.taskerArea,
   });
 
   // Factory method to create a Tasker from a JSON object
@@ -51,11 +53,12 @@ class Tasker {
           .toList(),
       skills: (json['skills'] as List)
           .map((skillJson) => TaskerSkill.fromJson(skillJson))
-          .toList(), // Now parsing TaskerSkill
+          .toList(),
       bio: json['bio'],
       averagePrice: json['averagePrice'].toDouble(),
       availability: Availability.fromJson(json['availability']),
       totalNumberTasks: json['totalNumberTasks'],
+      taskerArea: json['taskerArea'],
     );
   }
 
@@ -76,6 +79,7 @@ class Tasker {
       'averagePrice': averagePrice,
       'availability': availability.toJson(),
       'totalNumberTasks': totalNumberTasks,
+      'taskerArea': taskerArea,
     };
   }
 }

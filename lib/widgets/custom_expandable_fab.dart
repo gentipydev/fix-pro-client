@@ -1,4 +1,5 @@
 import 'package:fit_pro_client/models/task.dart';
+import 'package:fit_pro_client/models/tasker.dart';
 import 'package:fit_pro_client/providers/map_provider.dart';
 import 'package:fit_pro_client/providers/task_state_provider.dart';
 import 'package:fit_pro_client/providers/tasks_provider.dart';
@@ -215,10 +216,12 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
                           double distanceInKm = taskerPlaceDistance / 1000;
                           String formattedDistance = distanceInKm.toStringAsFixed(1);
 
+                          Tasker currentTasker = fakeData.fakeTaskers[taskStateProvider.currentTaskerIndex];
+
                           // Create the task using the retrieved locations and tasker area
                           tasksProvider.createTask(
                             client: fakeData.fakeUser,
-                            tasker: fakeData.fakeTaskers[0],
+                            tasker: currentTasker,
                             userLocation: userLocation,
                             taskerLocation: taskerLocation,
                             date: DateTime.now(),

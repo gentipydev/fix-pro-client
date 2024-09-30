@@ -7,6 +7,7 @@ import 'package:fit_pro_client/screens/tasks_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:provider/provider.dart';
 import 'package:logger/logger.dart';
 import 'package:fit_pro_client/services/fake_data.dart';
@@ -117,14 +118,58 @@ class HomeContent extends StatefulWidget {
 class _HomeContentState extends State<HomeContent> {
   Logger logger = Logger();
   FakeData fakeData = FakeData(); 
+  List<TaskGroup> displayedTaskGroups = [];
   List<TaskGroup> filteredSuggestions = [];
   final TextEditingController _controller = TextEditingController();
+  final int itemsPerPage = 6;
+  final ScrollController _scrollController = ScrollController();
+  bool _isLoadingMore = false;
+   bool _imagesPrecached = false;
 
   @override
   void initState() {
     super.initState();
     _controller.clear();
     filteredSuggestions.clear();
+    
+    // Load the initial 6 items
+    _loadMoreItems();
+
+    // Add listener to the scroll controller
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 && !_isLoadingMore) {
+        _loadMoreItems();
+      }
+    });
+  }
+
+    @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_imagesPrecached) {
+      for (var taskGroup in fakeData.fakeTaskGroups) {
+        precacheImage(AssetImage(taskGroup.imagePath), context);
+      }
+      _imagesPrecached = true;
+    }
+  }
+
+  void _loadMoreItems() {
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    Future.delayed(const Duration(milliseconds: 500), () {
+      final nextIndex = displayedTaskGroups.length;
+      final remainingItems = fakeData.fakeTaskGroups.length - nextIndex;
+      final count = remainingItems > itemsPerPage ? itemsPerPage : remainingItems;
+
+      setState(() {
+        displayedTaskGroups.addAll(fakeData.fakeTaskGroups.sublist(nextIndex, nextIndex + count));
+        _isLoadingMore = false;
+      });
+    });
   }
 
   @override
@@ -155,14 +200,14 @@ class _HomeContentState extends State<HomeContent> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Përshëndetje Alexa !',
+                  'Përshëndetje Alexa!',
                   style: TextStyle(
                     color: AppColors.white,
                     fontSize: 24.sp,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                SizedBox(height: 30.h),
+                SizedBox(height: 20.h),
                 Text(
                   'Për çfarë ju nevojitet ndihmë sot...',
                   style: TextStyle(
@@ -186,7 +231,9 @@ class _HomeContentState extends State<HomeContent> {
                         filteredSuggestions.clear();
                       } else {
                         filteredSuggestions = fakeData.fakeTaskGroups
-                            .where((category) => category.title.toLowerCase().contains(value.toLowerCase())).toList();
+                            .where((category) =>
+                                category.title.toLowerCase().contains(value.toLowerCase()))
+                            .toList();
                       }
                     });
                   },
@@ -198,7 +245,8 @@ class _HomeContentState extends State<HomeContent> {
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: AppColors.grey100,
-                    contentPadding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 12.w),
+                    contentPadding:
+                        EdgeInsets.symmetric(vertical: 16.h, horizontal: 12.w),
                     hintText: "Provoni 'montim mobiliesh' ose 'lyerje'",
                     hintStyle: TextStyle(
                       color: AppColors.grey300,
@@ -226,6 +274,7 @@ class _HomeContentState extends State<HomeContent> {
                     ),
                     child: ListView.builder(
                       shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
                       itemCount: filteredSuggestions.length,
                       itemBuilder: (context, index) {
                         final suggestion = filteredSuggestions[index];
@@ -253,7 +302,8 @@ class _HomeContentState extends State<HomeContent> {
                             });
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const SearchScreen()),
+                              MaterialPageRoute(
+                                  builder: (context) => const SearchScreen()),
                             );
                           },
                         );
@@ -276,106 +326,79 @@ class _HomeContentState extends State<HomeContent> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 16.h),
-                _buildCategoryGrid(),
               ],
             ),
           ),
-          SizedBox(height: 120.h),
+          // Flexible or Expanded to make GridView take remaining space
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.6,
+            child: _buildCategoryGrid(),
+          ),
+          if (_isLoadingMore) _buildLoadingIndicator(),
         ],
       ),
     );
   }
 
-  // // Build the shimmer effect grid
-  // Widget _buildShimmerGrid() {
-  //   return GridView.builder(
-  //     shrinkWrap: true,
-  //     physics: const NeverScrollableScrollPhysics(),
-  //     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-  //       crossAxisCount: 3,
-  //       crossAxisSpacing: 8.w,
-  //       mainAxisSpacing: 8.h,
-  //       childAspectRatio: 0.85,
-  //     ),
-  //     itemCount: fakeData.fakeTaskGroups.length,
-  //     itemBuilder: (context, index) {
-  //       return Shimmer.fromColors(
-  //         baseColor: AppColors.grey300,
-  //         highlightColor: AppColors.grey100,
-  //         child: Column(
-  //           children: [
-  //             Expanded(
-  //               child: Container(
-  //                 width: double.infinity,
-  //                 decoration: BoxDecoration(
-  //                   color: AppColors.grey300,
-  //                   borderRadius: BorderRadius.circular(8.r),
-  //                 ),
-  //               ),
-  //             ),
-  //             SizedBox(height: 8.h),
-  //             Container(
-  //               width: double.infinity,
-  //               height: 16.h,
-  //               color: AppColors.grey300,
-  //             ),
-  //           ],
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
-
-  // Build the actual category grid with images after loading
   Widget _buildCategoryGrid() {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 8.w,
-        mainAxisSpacing: 8.h,
-        childAspectRatio: 0.85,
-      ),
-      itemCount: fakeData.fakeTaskGroups.length,
-      itemBuilder: (context, index) {
-        final category = fakeData.fakeTaskGroups[index];
-
-        return GestureDetector(
-          onTap: () {
-            context.read<TaskStateProvider>().setSelectedTaskGroup(category);
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const SearchScreen()),
-            );
-          },
-          child: Column(
-            children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8.r),
-                  child: Image.asset(
-                    category.imagePath,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
+    return Padding(
+      padding: EdgeInsets.all(16.w),
+      child: GridView.builder(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2, 
+          crossAxisSpacing: 20.w,
+          mainAxisSpacing: 20.h,
+          childAspectRatio: 1.2,
+        ),
+        itemCount: displayedTaskGroups.length,
+        itemBuilder: (context, index) {
+          final category = displayedTaskGroups[index];
+          return GestureDetector(
+            onTap: () {
+              context.read<TaskStateProvider>().setSelectedTaskGroup(category);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SearchScreen()),
+              );
+            },
+            child: Column(
+              children: [
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8.r),
+                    child: Image.asset(
+                      category.imagePath,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(height: 8.h),
-              Text(
-                category.title,
-                style: TextStyle(
-                  color: AppColors.grey700,
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w500,
+                SizedBox(height: 8.h),
+                Text(
+                  category.title,
+                  style: TextStyle(
+                    color: AppColors.grey700,
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        );
-      },
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+Widget _buildLoadingIndicator() {
+    return const Center(
+      child: SpinKitThreeBounce(
+        color: AppColors.tomatoRed,
+        size: 16.0,
+      ),
     );
   }
 }
