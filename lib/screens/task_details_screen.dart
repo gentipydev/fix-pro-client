@@ -5,13 +5,13 @@ import 'package:fit_pro_client/screens/tasker_profile_screen.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:fit_pro_client/widgets/custom_expandable_fab.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:logger/logger.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class TaskDetailsScreen extends StatefulWidget {
+class TaskDetailsScreen extends ConsumerStatefulWidget {
   final Task task;
 
   const TaskDetailsScreen({
@@ -23,11 +23,12 @@ class TaskDetailsScreen extends StatefulWidget {
   TaskDetailsScreenState createState() => TaskDetailsScreenState();
 }
 
-class TaskDetailsScreenState extends State<TaskDetailsScreen> {
+class TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
   Logger logger = Logger();
   GoogleMapController? mapController;
   Set<Marker> markers = {};
   Set<Polyline> polylines = {};
+
 
   Future<void> _setupMap(LatLng taskerPosition, LatLng userPosition, LatLngBounds? bounds) async {
     try {
@@ -49,7 +50,7 @@ class TaskDetailsScreenState extends State<TaskDetailsScreen> {
       // If bounds are not provided, fetch them using MapProvider
       LatLngBounds? effectiveBounds = bounds;
       if (effectiveBounds == null) {
-        final result = await Provider.of<MapProvider>(context, listen: false).fetchPastTaskRoute(userPosition, taskerPosition);
+        final result = await ref.read(mapStateProvider.notifier).fetchPastTaskRoute(userPosition, taskerPosition);
 
         if (result != null) {
           effectiveBounds = result['bounds'];
@@ -116,6 +117,9 @@ class TaskDetailsScreenState extends State<TaskDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final mapProvider = ref.watch(mapStateProvider);
+    final mapStateNotifier = ref.read(mapStateProvider.notifier);
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.tomatoRed,
@@ -138,8 +142,8 @@ class TaskDetailsScreenState extends State<TaskDetailsScreen> {
                 Stack(children: [
                   SizedBox(
                     height: 220.h,
-                    child: Consumer<MapProvider>(
-                      builder: (context, mapProvider, child) {
+                    child: Consumer(
+                      builder: (context, ref, child) {
                         return GoogleMap(
                           initialCameraPosition: const CameraPosition(
                             target: LatLng(41.3275, 19.8189),
@@ -147,16 +151,14 @@ class TaskDetailsScreenState extends State<TaskDetailsScreen> {
                           ),
                           onMapCreated: (GoogleMapController controller) {
                             mapController = controller;
-                             mapProvider.loadMapStyle(context);
+                            mapStateNotifier.loadMapStyle(context);
                             _setupMap(widget.task.taskerLocation, widget.task.userLocation, widget.task.bounds);
                           },
                           style: mapProvider.mapStyle,
+                          mapToolbarEnabled: false,
                           polylines: polylines,
                           markers: markers,
-                          zoomControlsEnabled: true,
-                          scrollGesturesEnabled: true, 
-                          zoomGesturesEnabled: true,
-                          rotateGesturesEnabled: true,
+                          zoomControlsEnabled: false,
                         );
                       },
                     ),
@@ -375,17 +377,57 @@ class TaskDetailsScreenState extends State<TaskDetailsScreen> {
                       ),
                       SizedBox(height: 4.h),
                       const Divider(color: AppColors.grey300, thickness: 0.5),
+                      SizedBox(height: 4.h),
                       Text(
                         'Veglat Kryesore',
                         style: TextStyle(fontSize: 16.sp),
                       ),
                       SizedBox(height: 4.h),
-                      Text(
-                        'Profesionisti duhet te sjellë veglat e veta',
-                        style: TextStyle(
-                        fontSize: 14.sp, color: AppColors.grey700
-                        ),
-                      ),
+                      widget.task.bringOwnTools 
+                        ? Text(
+                            'Profesionisti duhet te sjellë veglat e veta',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: AppColors.grey700,
+                            ),
+                          )
+                        : (widget.task.taskTools != null && widget.task.taskTools!.isNotEmpty)
+                            ? Padding(
+                                padding: EdgeInsets.symmetric(vertical: 10.h),
+                                child: Wrap(
+                                  spacing: 8.0,
+                                  runSpacing: 4.0,
+                                  children: widget.task.taskTools!.map((tool) {
+                                    return Chip(
+                                      label: Text(
+                                        tool,
+                                        style: const TextStyle(
+                                          color: AppColors.grey700,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      backgroundColor: AppColors.tomatoRedLighter,
+                                      deleteIcon: const Icon(Icons.close, size: 20),
+                                      onDeleted: () {
+                                        setState(() {
+                                          widget.task.taskTools!.remove(tool);
+                                        });
+                                      },
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8.r),
+                                        side: BorderSide.none,
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              )
+                            : Text(
+                                'Asnjë vegël nuk është zgjedhur',
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  color: AppColors.grey700,
+                                ),
+                              ),
                       SizedBox(height: 4.h),
                       const Divider(color: AppColors.grey300, thickness: 0.5),
                       Text(
@@ -405,7 +447,7 @@ class TaskDetailsScreenState extends State<TaskDetailsScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const AddTaskDetails(),
+                              builder: (context) => AddTaskDetails(task: widget.task),
                             ),
                           );
                         },

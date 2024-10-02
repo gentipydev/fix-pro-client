@@ -1,12 +1,12 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
-import 'package:fit_pro_client/providers/task_state_provider.dart';
 import 'package:fit_pro_client/utils/constants.dart';
+import 'package:fit_pro_client/providers/task_state_provider.dart';
 
-class SearchSection extends StatelessWidget {
+class SearchSection extends ConsumerWidget { 
   final TextEditingController searchController;
   final bool isAddressSelected;
   final List<String> filteredAddresses;
@@ -33,8 +33,8 @@ class SearchSection extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final taskState = Provider.of<TaskStateProvider>(context);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final taskState = ref.watch(taskStateProvider);
 
     return SlideTransition(
       position: slideAnimation,
@@ -137,21 +137,6 @@ class SearchSection extends StatelessWidget {
                                     },
                                   ),
                                 ),
-                                SizedBox(width: 20.w),
-                                GestureDetector(
-                                  onTap: () {
-                                    if (isAddressSelected) {
-                                      performSearch(searchController.text);
-                                    } else {
-                                      showAddressNotification();
-                                    }
-                                  },
-                                  child: Icon(
-                                    Icons.search,
-                                    color: AppColors.tomatoRed,
-                                    size: 32.sp,
-                                  ),
-                                ),
                               ],
                             ),
                           ),
@@ -205,7 +190,13 @@ class SearchSection extends StatelessWidget {
               child: taskState.isLocationSelected
                   ? const SizedBox()
                   : GestureDetector(
-                      onTap: useCurrentLocation,
+                      onTap: () {
+                        if (isAddressSelected) {
+                          performSearch(searchController.text);
+                        } else {
+                          useCurrentLocation();
+                        }
+                      },
                       child: Column(
                         children: [
                           Text(
@@ -216,15 +207,46 @@ class SearchSection extends StatelessWidget {
                             ),
                           ),
                           SizedBox(height: 5.h),
-                          Icon(
-                            CupertinoIcons.chevron_down,
-                            color: AppColors.white,
-                            size: 24.sp,
+                          SizedBox(
+                            height: 45.h, 
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              alignment: Alignment.topCenter,
+                              children: [
+                                Positioned(
+                                  bottom: -30.h, 
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    shape: const CircleBorder(),
+                                    elevation: 6,
+                                    child: Container(
+                                      width: 70.w,
+                                      height: 70.w,
+                                      decoration: BoxDecoration(
+                                        color: AppColors.white,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: AppColors.tomatoRed,
+                                          width: 4.w,
+                                        ),
+                                      ),
+                                      child: Center(
+                                        child: Icon(
+                                          FontAwesomeIcons.searchengin,
+                                          color: AppColors.tomatoRed,
+                                          size: 35.sp,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
-            ),
+            )
           ],
         ),
       ),

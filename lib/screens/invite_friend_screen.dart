@@ -15,7 +15,7 @@ class InviteFriendScreen extends StatelessWidget {
           'Fto një mik',
           style: TextStyle(
             color: AppColors.white,
-            fontSize: 20.sp
+            fontSize: 16.sp
           ),
         ),
         centerTitle: true,

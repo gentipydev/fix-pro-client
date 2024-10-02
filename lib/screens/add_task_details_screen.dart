@@ -1,15 +1,51 @@
+import 'package:fit_pro_client/models/task.dart';
 import 'package:fit_pro_client/providers/map_provider.dart';
 import 'package:fit_pro_client/providers/task_state_provider.dart';
 import 'package:fit_pro_client/screens/home_screen.dart';
+import 'package:fit_pro_client/screens/profile_screen/payments_screen.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:fit_pro_client/widgets/select_time.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:logger/logger.dart';
 import 'package:lottie/lottie.dart';
-import 'package:provider/provider.dart';
 
-class AddTaskDetails extends StatelessWidget {
-  const AddTaskDetails({super.key});
+
+class ToolSuggestion {
+  final String title;
+  final String imagePath;
+
+  ToolSuggestion({required this.title, required this.imagePath});
+}
+
+final List<ToolSuggestion> fakeTools = [
+  ToolSuggestion(title: 'Furçe Lyerje', imagePath: 'assets/images/furce_lyerje.png'),
+  ToolSuggestion(title: 'Sharre Elektrike', imagePath: 'assets/images/sharre_elektrike.png'),
+  ToolSuggestion(title: 'Thika', imagePath: 'assets/images/thika.png'),
+  ToolSuggestion(title: 'Trapan', imagePath: 'assets/images/trapan.png'),
+];
+
+
+class AddTaskDetails extends ConsumerStatefulWidget {
+  final Task task;
+
+  const AddTaskDetails({super.key, required this.task});
+
+  @override
+  ConsumerState<AddTaskDetails> createState() => _AddTaskDetailsState();
+}
+
+class _AddTaskDetailsState extends ConsumerState<AddTaskDetails> {
+  Logger logger = Logger();
+  final TextEditingController _detailsController = TextEditingController();
+  String? selectedPaymentMethod = 'Shto mënyrën e pagesës';
+
+  @override
+  void dispose() {
+    _detailsController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +56,7 @@ class AddTaskDetails extends StatelessWidget {
           'Rishiko dhe konfirmo',
           style: TextStyle(
             color: AppColors.white,
-            fontSize: 18
+            fontSize: 16
           ),
         ),
         centerTitle: true,
@@ -35,7 +71,7 @@ class AddTaskDetails extends StatelessWidget {
               padding: EdgeInsets.all(8.w),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.white, AppColors.grey200],
+                  colors: [AppColors.white, AppColors.grey100],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
@@ -70,7 +106,7 @@ class AddTaskDetails extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
-                        "Montim mobiliesh",
+                        widget.task.taskWorkGroup.title,
                         style: TextStyle(
                           fontSize: 18.sp,
                           color: AppColors.grey700
@@ -82,12 +118,12 @@ class AddTaskDetails extends StatelessWidget {
                           shape: BoxShape.circle,
                           border: Border.all(
                             color: AppColors.grey300,
-                            width: 3.0,
+                            width: 3.w,
                           ),
                         ),
                         child: CircleAvatar(
                           radius: 30.r,
-                          backgroundImage: const AssetImage('assets/images/client3.png'),
+                          backgroundImage: AssetImage(widget.task.tasker.profileImage),
                         ),
                       ),
                     ],
@@ -102,72 +138,119 @@ class AddTaskDetails extends StatelessWidget {
               ),
             ),
             SizedBox(height: 20.h),
-            
-            // Section for adding details
-            Container(
-              padding: EdgeInsets.all(8.w),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.white, AppColors.grey200],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+           _buildDetailsSection(), 
+           SizedBox(height: 10.h),
+
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ListTile(
+                  title: const Text(
+                    'Profesionisti do të sjell veglat e veta',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.grey700,
+                    ),
+                  ),
+                  trailing: Transform.scale(
+                    scale: 1.2,
+                    child: Checkbox(
+                      value: widget.task.bringOwnTools,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          widget.task.bringOwnTools = value ?? true;
+                        });
+                      },
+                      activeColor: AppColors.tomatoRed,
+                      checkColor: AppColors.white,
+                      side: const BorderSide(
+                        color: AppColors.grey700,
+                        width: 2.0,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Detajet e Punës',
-                    style: TextStyle(
-                      fontSize: 20.sp,
-                      color: AppColors.grey700,
+
+                if (!widget.task.bringOwnTools)
+                  ExpansionTile(
+                    title: const Text(
+                      'Zgjidhni Veglat',
+                      style: TextStyle(fontSize: 14, color: AppColors.grey700),
                     ),
-                  ),
-                  SizedBox(height: 10.h),
-                  Text(
-                    'Detajet shtesë ndihmojnë profesionistin të përgatitet për punën',
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      color: AppColors.grey700,
-                    ),
-                  ),
-                  SizedBox(height: 20.h),
-                  TextField(
-                    maxLines: 3,
-                    cursorColor: AppColors.grey700,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: AppColors.grey700,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Për shembull, çfarë mjetesh pune janë të nevojshme, ku mund të parkojë, apo detaje të tjera...',
-                      hintStyle: TextStyle(
-                        color: AppColors.grey500,
-                        fontSize: 14.sp,
+                    tilePadding: EdgeInsets.zero,
+                    iconColor: AppColors.tomatoRed,
+                    children: [
+                      if (widget.task.taskTools != null && widget.task.taskTools!.isNotEmpty)
+                        Padding(
+                          padding: EdgeInsets.symmetric(vertical: 10.h),
+                          child: Wrap(
+                            spacing: 8.0,
+                            runSpacing: 4.0,
+                            children: widget.task.taskTools!.map((tool) {
+                              return Chip(
+                                label: Text(
+                                  tool,
+                                  style: const TextStyle(
+                                    color: AppColors.grey700,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                backgroundColor: AppColors.tomatoRedLighter,
+                                deleteIcon: const Icon(Icons.close, size: 20),
+                                onDeleted: () {
+                                  setState(() {
+                                    widget.task.taskTools!.remove(tool);
+                                  });
+                                },
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.r),
+                                  side: BorderSide.none,
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: fakeTools.length,
+                        itemBuilder: (context, index) {
+                          final tool = fakeTools[index];
+                          return ListTile(
+                            leading: ClipRRect(
+                              borderRadius: BorderRadius.circular(4.r),
+                              child: Image.asset(
+                                tool.imagePath,
+                                width: 50.w,
+                                height: 50.h,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            title: Text(
+                              tool.title,
+                              style: TextStyle(
+                                color: AppColors.grey700,
+                                fontSize: 16.sp,
+                              ),
+                            ),
+                            onTap: () {
+                              setState(() {
+                                widget.task.taskTools ??= [];
+                                if (!widget.task.taskTools!.contains(tool.title)) {
+                                  widget.task.taskTools!.add(tool.title);
+                                }
+                              });
+                            },
+                          );
+                        },
                       ),
-                      border: const OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.grey300, width: 1.0),
-                      ),
-                      enabledBorder: const OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.grey300, width: 1.0),
-                      ),
-                      focusedBorder: const OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.grey300, width: 1.0),
-                      ),
-                    ),
+                    ],
                   ),
-                  SizedBox(height: 10.h),
-                  Text(
-                    '*Ju lutemi ndani disa detaje me profesionistin tuaj. Sigurisht që më vonë mund të bisedoni për të bërë ndryshime',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: AppColors.tomatoRed,
-                    ),
-                  ),
-                ],
-              ),
+              ],
             ),
-            SizedBox(height: 20.h)
+            
+            SizedBox(height: 80.h)
           ],
         ),
       ),
@@ -182,10 +265,22 @@ class AddTaskDetails extends StatelessWidget {
             ),
           ),
           onPressed: () {
-            final taskStateProvider = Provider.of<TaskStateProvider>(context, listen: false);
-            final mapProvider = Provider.of<MapProvider>(context, listen: false);
-            taskStateProvider.resetTask(); 
-            mapProvider.clearPolylines();
+            String newDetails = _detailsController.text;
+
+            if (newDetails.isNotEmpty) {
+              if (widget.task.taskDetails == null || widget.task.taskDetails!.isEmpty) {
+                widget.task.taskDetails = newDetails;
+              } else {
+                widget.task.taskDetails = '${widget.task.taskDetails!}\n$newDetails';
+              }
+            }
+
+            final taskStateNotifier = ref.read(taskStateProvider.notifier);
+            final mapStateNotifier = ref.read(mapStateProvider.notifier);
+
+            taskStateNotifier.resetTask();
+            mapStateNotifier.clearPolylines();
+
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -218,13 +313,28 @@ class AddTaskDetails extends StatelessWidget {
           ),
           trailing: TextButton(
             onPressed: () {
-              // Handle payment action
+              showModalBottomSheet(
+                context: context,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+                ),
+                isDismissible: true,
+                enableDrag: true,
+                isScrollControlled: true,
+                builder: (context) => PaymentBottomSheet(
+                  onPaymentMethodSelected: (method) {
+                    setState(() {
+                      selectedPaymentMethod = method; 
+                    });
+                  },
+                ),
+              );
             },
             child: Text(
-              'Shto mënyrën e pagesës',
+              selectedPaymentMethod ?? 'Shto mënyrën e pagesës',
               style: TextStyle(
                 fontSize: 18.sp,
-                color: AppColors.tomatoRed
+                color: AppColors.tomatoRed,
               ),
             ),
           ),
@@ -259,7 +369,7 @@ class AddTaskDetails extends StatelessWidget {
             ),
           ),
           trailing: Text(
-            '2.000 lek/orë pune',
+            '${widget.task.tasker.skills.first.taskGroup.feePerHour.round()} lek/orë pune',
               style: TextStyle(
                 fontSize: 18.sp,
                 color: AppColors.grey700
@@ -297,4 +407,75 @@ class AddTaskDetails extends StatelessWidget {
       ],
     );
   }
+
+  Widget _buildDetailsSection() {
+    return Container(
+      padding: EdgeInsets.all(8.w),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.white, AppColors.grey100],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Detajet e Punës',
+            style: TextStyle(
+              fontSize: 20.sp,
+              color: AppColors.grey700,
+            ),
+          ),
+          SizedBox(height: 10.h),
+          Text(
+            'Detajet shtesë ndihmojnë profesionistin të përgatitet për punën',
+            style: TextStyle(
+              fontSize: 16.sp,
+              color: AppColors.grey700,
+            ),
+          ),
+          SizedBox(height: 20.h),
+          TextField(
+            controller: _detailsController,
+            maxLines: 3,
+            cursorColor: AppColors.grey700,
+            style: TextStyle(
+              fontSize: 16.sp,
+              color: AppColors.grey700,
+            ),
+            decoration: InputDecoration(
+              hintText:
+                  'Për shembull, çfarë mjetesh pune janë të nevojshme, ku mund të parkojë, apo detaje të tjera...',
+              hintStyle: TextStyle(
+                color: AppColors.grey500,
+                fontSize: 14.sp,
+              ),
+              border: const OutlineInputBorder(
+                borderSide: BorderSide(color: AppColors.grey300, width: 1.0),
+              ),
+              enabledBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: AppColors.grey300, width: 1.0),
+              ),
+              focusedBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: AppColors.grey300, width: 1.0),
+              ),
+            ),
+          ),
+          SizedBox(height: 10.h),
+          Text(
+            '*Ju lutemi ndani disa detaje me profesionistin tuaj. Sigurisht që më vonë mund të bisedoni për të bërë ndryshime',
+            style: TextStyle(
+              fontSize: 12.sp,
+              color: AppColors.tomatoRed,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
+
+
+

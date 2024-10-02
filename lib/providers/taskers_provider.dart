@@ -1,83 +1,102 @@
-import 'package:flutter/material.dart';
 import 'package:fit_pro_client/models/tasker.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fit_pro_client/services/taskers_service.dart';
-import 'package:logger/logger.dart';
 
-class TaskersProvider with ChangeNotifier {
-  Logger logger = Logger();
-  final TaskersService _taskersService = TaskersService();
+class TaskersState {
+  final List<Tasker> favoriteTaskers;
+  final List<Tasker> allTaskers;
+  final bool isLoading;
+  final String? errorMessage;
 
-  List<Tasker> _favoriteTaskers = [];
-  List<Tasker> _pastTaskers = [];
+  TaskersState({
+    required this.favoriteTaskers,
+    required this.allTaskers,
+    required this.isLoading,
+    this.errorMessage,
+  });
 
-  List<Tasker> get favoriteTaskers => _favoriteTaskers;
-  List<Tasker> get pastTaskers => _pastTaskers;
-
-  bool _isLoading = false;
-  bool get isLoading => _isLoading;
-
-  TaskersProvider() {
-    fetchTaskers();
+  factory TaskersState.initial() {
+    return TaskersState(
+      favoriteTaskers: [],
+      allTaskers: [],
+      isLoading: false,
+      errorMessage: null,
+    );
   }
 
-  // Fetch taskers and separate into favorites and past
-  Future<void> fetchTaskers() async {
-    _isLoading = true;
-    notifyListeners();
-
-    try {
-      _pastTaskers = await _taskersService.fetchTaskers();
-      _favoriteTaskers = await _taskersService.fetchFavoriteTaskers();
-    } catch (error) {
-      logger.e(error);
-    }
-
-    _isLoading = false;
-    notifyListeners();
-  }
-
-  // Update favorite status of a tasker
-  void updateTaskerFavoriteStatus(String taskerId, bool isFavorite) {
-    try {
-      _taskersService.updateTaskerFavoriteStatus(taskerId, isFavorite);
-
-      // Re-fetch the taskers to update the lists
-      fetchTaskers();
-
-      logger.d("Tasker favorite status updated and lists re-fetched.");
-    } catch (e) {
-      logger.e("Error updating tasker favorite status: $e");
-    }
-  }
-
-  // Remove tasker from favorites but keep in the past taskers list
-  void removeTaskerFromFavorites(Tasker tasker) {
-    try {
-      // Update the tasker's favorite status in the service
-      _taskersService.updateTaskerFavoriteStatus(tasker.id, false);
-
-      // Remove tasker from the favoriteTaskers list
-      _favoriteTaskers.removeWhere((favTasker) => favTasker.id == tasker.id);
-
-      // Ensure the tasker remains in pastTaskers list
-      int index = _pastTaskers.indexWhere((pastTasker) => pastTasker.id == tasker.id);
-      if (index != -1) {
-        _pastTaskers[index].isFavorite = false;
-      }
-
-      notifyListeners();
-
-      logger.d("Tasker removed from favorites.");
-    } catch (e) {
-      logger.e("Error removing tasker from favorites: $e");
-    }
-  }
-
-  // Remove a tasker from the tasker list entirely
-  void removeTasker(String taskerId) {
-    _taskersService.deleteTasker(taskerId);
-    _pastTaskers.removeWhere((tasker) => tasker.id == taskerId);
-    _favoriteTaskers.removeWhere((tasker) => tasker.id == taskerId);
-    notifyListeners();
+  TaskersState copyWith({
+    List<Tasker>? favoriteTaskers,
+    List<Tasker>? allTaskers,
+    bool? isLoading,
+    String? errorMessage,
+  }) {
+    return TaskersState(
+      favoriteTaskers: favoriteTaskers ?? this.favoriteTaskers,
+      allTaskers: allTaskers ?? this.allTaskers,
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: errorMessage ?? this.errorMessage,
+    );
   }
 }
+
+
+class TaskersNotifier extends StateNotifier<TaskersState> {
+  final TaskersService _taskersService;
+
+  TaskersNotifier(this._taskersService) : super(TaskersState.initial());
+
+  // Fetch taskers from the service
+  Future<void> fetchTaskers() async {
+    state = state.copyWith(isLoading: true);
+
+    try {
+      final allTaskers = await _taskersService.fetchTaskers();
+      final favoriteTaskers = await _taskersService.fetchFavoriteTaskers();
+
+      // Use copyWith to update the state
+      state = state.copyWith(
+        allTaskers: allTaskers,
+        favoriteTaskers: favoriteTaskers,
+        isLoading: false,
+        errorMessage: null, // Clear any previous errors
+      );
+    } catch (e) {
+      // Set the errorMessage and set isLoading to false
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to fetch taskers: $e',
+      );
+    }
+  }
+
+  // Update tasker's favorite status
+  void updateTaskerFavoriteStatus(String taskerId, bool isFavorite) async {
+    try {
+      _taskersService.updateTaskerFavoriteStatus(taskerId, isFavorite);
+      
+      await fetchTaskers();  // Re-fetch taskers to reflect the updated favorite status
+    } catch (e) {
+      state = state.copyWith(
+        errorMessage: 'Failed to update tasker favorite status: $e',
+      );
+    }
+  }
+
+  // Delete a tasker by ID
+  void deleteTasker(String taskerId) async {
+    try {
+      _taskersService.deleteTasker(taskerId);
+      
+      // Re-fetch taskers to reflect the deletion
+      await fetchTaskers();
+    } catch (e) {
+      state = state.copyWith(
+        errorMessage: 'Failed to delete tasker: $e',
+      );
+    }
+  }
+}
+
+final taskersProvider = StateNotifierProvider<TaskersNotifier, TaskersState>(
+  (ref) => TaskersNotifier(TaskersService()),
+);

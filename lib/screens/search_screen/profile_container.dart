@@ -1,3 +1,4 @@
+import 'package:fit_pro_client/models/task.dart';
 import 'package:fit_pro_client/models/tasker.dart';
 import 'package:fit_pro_client/screens/add_task_details_screen.dart';
 import 'package:flutter/material.dart';
@@ -5,26 +6,30 @@ import 'package:fit_pro_client/providers/task_state_provider.dart';
 import 'package:fit_pro_client/screens/tasker_profile_screen.dart';
 import 'package:fit_pro_client/widgets/custom_expandable_fab.dart';
 import 'package:fit_pro_client/utils/constants.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:provider/provider.dart';
+import 'package:logger/logger.dart';
 
-class ProfileContainer extends StatefulWidget {
-  final Tasker? tasker;
+class ProfileContainer extends ConsumerStatefulWidget {
+  final Tasker tasker;
 
   const ProfileContainer({super.key, required this.tasker});
 
   @override
   ProfileContainerState createState() => ProfileContainerState();
 }
-class ProfileContainerState extends State<ProfileContainer> with TickerProviderStateMixin {
+
+class ProfileContainerState extends ConsumerState<ProfileContainer> with TickerProviderStateMixin {
+  Logger logger = Logger();
   late AnimationController _controller;
+  Task? profileContainerAcceptedTask;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 2), // 2 seconds transition
+      duration: const Duration(seconds: 2),
     );
   }
 
@@ -36,7 +41,7 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
 
   @override
   Widget build(BuildContext context) {
-    final taskState = Provider.of<TaskStateProvider>(context).taskState;
+    final taskState = ref.watch(taskStateProvider).taskState;
 
     // Trigger the animation when state changes to accepted
     if (taskState == TaskState.accepted) {
@@ -63,7 +68,7 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
               SizedBox(width: 8.w),
               Expanded( 
                 child: Text(
-                  widget.tasker?.taskerArea ?? '',
+                  widget.tasker.taskerArea ?? '',
                   style: TextStyle(
                     color: AppColors.black,
                     fontSize: 16.sp,
@@ -81,6 +86,7 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
               color: AppColors.grey700,
             ),
           ),
+          SizedBox(height: 10.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -94,7 +100,7 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                           Text(
-                          widget.tasker?.fullName ?? '',
+                          widget.tasker.fullName,
                           style: TextStyle(
                             fontSize: 18.sp,
                             color: AppColors.grey700,
@@ -116,7 +122,7 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
-                          widget.tasker?.rating.toString() ?? '',
+                          widget.tasker.rating.toString(),
                           style: TextStyle(
                             fontSize: 18.sp,
                             color: AppColors.grey700,
@@ -131,7 +137,7 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
                         ),
                         SizedBox(width: 4.w),
                         Text(
-                          '(${widget.tasker?.reviews.length} vlerësime)',
+                          '(${widget.tasker.reviews.length} vlerësime)',
                           style: TextStyle(
                             fontSize: 14.sp,
                             color: AppColors.grey700,
@@ -139,7 +145,7 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
                         ),
                       ],
                     ),
-                    SizedBox(height: 30.h),
+                    SizedBox(height: 20.h),
 
                     // Animated transition between two states
                     AnimatedSwitcher(
@@ -158,13 +164,22 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
                                   end: 0.0,
                                 ).animate(_controller),
                                 child: TextButton(
-                                  onPressed: () {
-                                    Navigator.push(
+                                  onPressed: () async {
+                                    Task? acceptedTask = await Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => TaskerProfileScreen(tasker: widget.tasker!),
+                                        builder: (context) => TaskerProfileScreen(tasker: widget.tasker),
                                       ),
                                     );
+
+                                    if (acceptedTask != null) {
+                                      logger.d("Task accepted: ${acceptedTask.id}");
+                                      setState(() {
+                                        profileContainerAcceptedTask = acceptedTask; // Save the accepted task
+                                      });
+                                    } else {
+                                      logger.e("Task was not accepted");
+                                    }
                                   },
                                   child: Text(
                                     'Shiko profilin',
@@ -192,7 +207,9 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => const AddTaskDetails(),
+                                        builder: (context) => AddTaskDetails(
+                                          task: profileContainerAcceptedTask!,
+                                        ),
                                       ),
                                     );
                                   },
@@ -212,7 +229,12 @@ class ProfileContainerState extends State<ProfileContainer> with TickerProviderS
                 ),
               ),
               ExpandableFab(
-                phoneNumber: widget.tasker?.contactInfo ?? '',
+                phoneNumber: widget.tasker.contactInfo,
+                onTaskAccepted: (Task task) {
+                  setState(() {
+                    profileContainerAcceptedTask = task;
+                  });
+                },
               ),
             ],
           ),

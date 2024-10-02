@@ -1,12 +1,12 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fit_pro_client/providers/map_provider.dart';
 import 'package:fit_pro_client/providers/task_state_provider.dart';
 import 'package:fit_pro_client/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fit_pro_client/utils/constants.dart';
-import 'package:provider/provider.dart';
 
-void showCancelDialog(BuildContext context) {
+void showCancelDialog(BuildContext context, WidgetRef ref) {
   showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -86,11 +86,10 @@ void showCancelDialog(BuildContext context) {
                   ),
                 ),
                 onPressed: () {
-                  // Cancel Task
-                  final taskStateProvider = Provider.of<TaskStateProvider>(context, listen: false);
-                  final mapProvider = Provider.of<MapProvider>(context, listen: false);
-                  taskStateProvider.resetTask(); 
-                  mapProvider.clearPolylines();
+                  ref.read(taskStateProvider.notifier).resetTask(); 
+                  ref.read(mapStateProvider.notifier).clearPolylines();
+                  
+                  // Navigate to HomeScreen
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (context) => const HomeScreen()),

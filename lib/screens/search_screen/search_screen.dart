@@ -10,14 +10,14 @@ import 'package:fit_pro_client/screens/search_screen/search_section.dart';
 import 'package:fit_pro_client/services/fake_data.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:logger/logger.dart';
-import 'package:provider/provider.dart';
 import 'package:lottie/lottie.dart' as lottie;
 
-class SearchScreen extends StatefulWidget {
+class SearchScreen extends ConsumerStatefulWidget {
   final bool? searchFromCurrentPosition;
   final LatLng? currentSearchLocation;
   final String? searchedAddress;
@@ -33,7 +33,7 @@ class SearchScreen extends StatefulWidget {
   SearchScreenState createState() => SearchScreenState();
 }
 
-class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixin, WidgetsBindingObserver {
+class SearchScreenState extends ConsumerState<SearchScreen> with TickerProviderStateMixin, WidgetsBindingObserver {
   Logger logger = Logger();
   GoogleMapController? mapController;
   Set<Marker> markers = {};
@@ -89,11 +89,11 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
   @override
   void dispose() {
     mapController?.dispose();
+    _controller.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  // Lifecycle observer to handle app resume
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && _isWaiting) {
@@ -101,121 +101,151 @@ class SearchScreenState extends State<SearchScreen> with TickerProviderStateMixi
     }
   }
 
-  // Disable map gestures when needed
   void _toggleMapInteraction(bool disable) {
     setState(() {
       _mapInteractionDisabled = disable;
     });
   }
 
-Future<void> _performSearch({bool searchFromCurrentPosition = true, String? address}) async {
+  Future<void> _performSearch({
+    bool searchFromCurrentPosition = true,
+    String? address,
+  }) async {
     LatLng? targetLocation;
 
-    // Get the TaskStateProvider to retrieve search details if necessary
-    final taskStateProvider = Provider.of<TaskStateProvider>(context, listen: false);
-
+    final taskStateNotifier = ref.read(taskStateProvider.notifier);
+    final mapStateNotifier = ref.read(mapStateProvider.notifier);
+    
+    // Determine the target location based on search mode
     if (searchFromCurrentPosition) {
-      // Use the local currentLocation if available, otherwise use currentSearchLocation from TaskStateProvider
-      targetLocation = currentLocation ?? taskStateProvider.currentSearchLocation;
+      // Use the current location or fetch it from task state if unavailable
+      targetLocation = currentLocation ?? ref.read(taskStateProvider).currentSearchLocation;
 
-      // Save the current location search details
-      taskStateProvider.setSearchDetails(
+      // Update task state with the location search details
+      taskStateNotifier.setSearchDetails(
         fromCurrentPosition: true,
         currentPosition: targetLocation,
       );
     } else {
-      // Ensure the address is valid
+      // Handle address search case
       if (address == null || address.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ju lutem shkruani një adresë të vlefshme'))
+          const SnackBar(content: Text('Ju lutem shkruani një adresë të vlefshme')),
         );
         return;
       }
 
       try {
         // Fetch LatLng for the provided address
-        targetLocation = await Provider.of<MapProvider>(context, listen: false).getLatLngFromAddress(address);
+        targetLocation = await mapStateNotifier.getLatLngFromAddress(address);
         setState(() {
           userAddressLocation = targetLocation;
         });
 
-        // Save the address search details
-        taskStateProvider.setSearchDetails(
+        // Update task state with the address search details
+        taskStateNotifier.setSearchDetails(
           fromCurrentPosition: false,
           currentPosition: targetLocation,
           address: address,
         );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Nuk u gjet vendodhja. Ju lutem provoni përsëri'))
+          const SnackBar(content: Text('Nuk u gjet vendodhja. Ju lutem provoni përsëri')),
         );
         return;
       }
     }
 
-    // Proceed with the rest of your logic once targetLocation is determined
-    taskStateProvider.setLocationSelected(true);
-    taskStateProvider.setTaskState(TaskState.searching);
+    // Proceed with the next steps if the target location is available
+    if (targetLocation != null) {
+      taskStateNotifier.setLocationSelected(true);
+      taskStateNotifier.setTaskState(TaskState.searching);
 
-    setState(() {
-      _statusText = 'Kërkesa i është dërguar profesionistit më të afërt\nJu lutem prisni konfirmimin nga ana e tij...';
-      _isWaiting = true;
-    });
+      // Update the UI immediately with search status
+      setState(() {
+        _statusText = 'Kërkesa i është dërguar profesionistit më të afërt\nJu lutem prisni konfirmimin nga ana e tij...';
+        _isWaiting = true;
+      });
 
-    // Center the map on the location (current or searched)
-    _centerMapOnMarker(targetLocation!);
-    _toggleMapInteraction(true); // Disable map gestures
+      // Center the map on the selected location
+      _centerMapOnMarker(targetLocation);
+      _toggleMapInteraction(true); // Disable map gestures during search
 
-    // Generate a fake tasker location near the target location
-    LatLng fakeTaskerLocation = _generateFakeTaskerLocation(targetLocation);
-    taskStateProvider.setTaskerLocation(fakeTaskerLocation);
+      // Generate a fake tasker location near the target location
+      LatLng fakeTaskerLocation = _generateFakeTaskerLocation(targetLocation);
+      taskStateNotifier.setTaskerLocation(fakeTaskerLocation);
 
-    // Start the 10-second countdown
-    Future.delayed(const Duration(seconds: 10), () async {
+        // Delete the current location marker
+        Future.delayed(const Duration(seconds: 3)).then((_) {
+        if (mounted) {
+          setState(() {
+            markers.clear();
+          });
+        }
+      });
+
+      // Start the 10-second countdown for tasker response
+      await Future.delayed(const Duration(seconds: 10));
+
+      // If the widget is still mounted, proceed with tasker assignment
       if (!mounted) return;
-      final mapProvider = Provider.of<MapProvider>(context, listen: false);
 
-      // Get the current tasker based on the index
+      // Fetch the tasker based on the current index
       final fakeData = FakeData();
-      final tasker = fakeData.fakeTaskers[taskStateProvider.currentTaskerIndex];
+      final currentTaskerIndex = ref.read(taskStateProvider).currentTaskerIndex;
+      final tasker = fakeData.fakeTaskers[currentTaskerIndex];
 
-      String? taskerArea = await mapProvider.getAddressFromLatLng(fakeTaskerLocation, isFullAddress: false);
+      try {
+        // Fetch tasker's area and route concurrently
+        final taskerAreaFuture = mapStateNotifier.getAddressFromLatLng(fakeTaskerLocation, isFullAddress: false);
+        final routeBoundsFuture = mapStateNotifier.fetchRoute(targetLocation, fakeTaskerLocation);
 
-      // Set the current Tasker in the state
-      setState(() {
-        _currentTasker = tasker;
-        tasker.taskerArea = taskerArea;
-      });
+        // Await both operations
+        final taskerArea = await taskerAreaFuture;
+        final bounds = await routeBoundsFuture;
 
-      taskStateProvider.setTaskState(TaskState.profileView);
-      _toggleMapInteraction(false); // Re-enable map gestures
+        // If the widget is still mounted, update the UI
+        if (mounted) {
+          setState(() {
+            _currentTasker = tasker;
+            _currentTasker?.taskerArea = taskerArea;
 
-      setState(() {
-        _statusText = "Urime! Ky profesionist ka pranuar punen tuaj\nJu mund ta pranoni punen direkt ose pasi keni pare profilin e tij mund ta pranoni apo refuzoni atë...";
-        _isWaiting = false;
-      });
+            _statusText = "Urime! Ky profesionist ka pranuar punen tuaj\n"
+                          "Ju mund ta pranoni punen direkt ose pasi keni pare profilin e tij mund ta pranoni apo refuzoni atë...";
+            _isWaiting = false;
 
-      LatLngBounds? bounds = await mapProvider.fetchRoute(targetLocation!, fakeTaskerLocation);
+            // Enable map gestures again
+            _toggleMapInteraction(false);
+          });
 
-      // Create the route and load tasker marker
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _loadTaskerMarker(fakeTaskerLocation, useCurrentLocation: searchFromCurrentPosition);
+          // Update task state to "profileView"
+          taskStateNotifier.setTaskState(TaskState.profileView);
 
-        // Center the map
-        _animateCameraToBounds(bounds);
-      });
-    });
+          // Update the map with the tasker marker and animate to the bounds
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _loadTaskerMarker(fakeTaskerLocation, useCurrentLocation: searchFromCurrentPosition);
+
+            if (bounds != null) {
+              _animateCameraToBounds(bounds);
+            }
+          });
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error occurred while fetching tasker details. Please try again.')),
+        );
+      }
+    }
   }
 
   void _animateCameraToBounds(LatLngBounds? bounds) {
     if (mapController != null) {
       mapController!.animateCamera(
-        CameraUpdate.newLatLngBounds(bounds!, 60),
+        CameraUpdate.newLatLngBounds(bounds!, 50),
       );
     }
   }
 
-  // Function to generate a fake tasker location near the current location
   LatLng _generateFakeTaskerLocation(LatLng currentLocation) {
     double offsetLat = 0.0027;
 
@@ -224,7 +254,6 @@ Future<void> _performSearch({bool searchFromCurrentPosition = true, String? addr
     return LatLng(currentLocation.latitude + offsetLat, currentLocation.longitude + offsetLng);
   }
 
-  // Restart the 10-second countdown when the app resumes
   void _restartWaitTimer() {
     setState(() {
       _statusText = 'Kërkesa i është dërguar profesionistit më të afërt\nJu lutem prisni konfirmimin nga ana e tij...';
@@ -233,7 +262,6 @@ Future<void> _performSearch({bool searchFromCurrentPosition = true, String? addr
     _performSearch();
   }
 
-  // Center the map on the current location
   void _centerMapOnMarker(LatLng location) {
     if (mapController != null) {
       mapController!.animateCamera(
@@ -247,17 +275,17 @@ Future<void> _performSearch({bool searchFromCurrentPosition = true, String? addr
     }
   }
 
-  // Search and filter addresses
   void _searchNewLocation(String query) async {
-    final mapProvider = Provider.of<MapProvider>(context, listen: false);
+    // Access mapStateNotifier using ref.read to trigger actions
+    final mapStateNotifier = ref.read(mapStateProvider.notifier);
     
     if (query.isNotEmpty) {
-      // Fetch suggestions from the Google Places API
-      await mapProvider.fetchAddresses(query);
+      // Fetch suggestions from the Google Places API via the mapStateNotifier
+      await mapStateNotifier.fetchAddresses(query);
 
       setState(() {
-        // Update filtered addresses with the latest fetched addresses
-        _filteredAddresses = mapProvider.fetchedAddresses;
+        // Update filtered addresses with the latest fetched addresses from the state
+        _filteredAddresses = ref.read(mapStateProvider).fetchedAddresses;
       });
     } else {
       // Clear suggestions if the search input is empty
@@ -384,18 +412,6 @@ Future<void> _performSearch({bool searchFromCurrentPosition = true, String? addr
     return LatLng(locationData.latitude!, locationData.longitude!);
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    final taskState = Provider.of<TaskStateProvider>(context).taskState;
-
-    // Check if the task has been accepted and the function hasn't been called yet
-    if (taskState == TaskState.accepted && !_onTaskAcceptedCalled) {
-      _onTaskAccepted();
-      _onTaskAcceptedCalled = true; // Prevent multiple triggers
-    }
-  }
 
   void _onTaskAccepted() {
     _controller.forward().then((_) {
@@ -423,28 +439,36 @@ Future<void> _performSearch({bool searchFromCurrentPosition = true, String? addr
   }
 
 
-  @override
-  Widget build(BuildContext context) {
-  final taskState = Provider.of<TaskStateProvider>(context).taskState;
-  final mapProvider = Provider.of<MapProvider>(context, listen: false);
+@override
+Widget build(BuildContext context) {
+
+    ref.listen<TaskStateData>(taskStateProvider, (previous, next) {
+
+    if (next.taskState == TaskState.accepted && !_onTaskAcceptedCalled) {
+      _onTaskAccepted();
+      _onTaskAcceptedCalled = true;
+    }
+  });
+
+  final taskState = ref.watch(taskStateProvider).taskState;
 
   return PopScope(
-    canPop: Provider.of<TaskStateProvider>(context).taskState == TaskState.initial,
+    canPop: taskState == TaskState.initial,
     onPopInvoked: (didPop) {
-      final taskStateProvider = Provider.of<TaskStateProvider>(context, listen: false);
-      final taskState = taskStateProvider.taskState;
+      final taskStateNotifier = ref.read(taskStateProvider.notifier);
+      final mapStateNotifier = ref.read(mapStateProvider.notifier);
 
       if (taskState == TaskState.accepted) {
-        taskStateProvider.resetTask(); 
-        mapProvider.clearPolylines();
+        taskStateNotifier.resetTask();
+        mapStateNotifier.clearPolylines();
+        
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const HomeScreen()),
           (Route<dynamic> route) => false,
         );
-      } 
-      else if (taskState == TaskState.searching || taskState == TaskState.profileView) {
-        showCancelDialog(context);
+      } else if (taskState == TaskState.searching || taskState == TaskState.profileView) {
+        showCancelDialog(context, ref);
       }
     },
     child: Scaffold(
@@ -452,8 +476,11 @@ Future<void> _performSearch({bool searchFromCurrentPosition = true, String? addr
         children: [
           // Google Map Layer
           Positioned.fill(
-            child: Consumer<MapProvider>(
-              builder: (context, mapProvider, child) {
+            child: Consumer(
+              builder: (context, ref, child) {
+                final mapProvider = ref.watch(mapStateProvider);
+                final mapStateNotifier = ref.read(mapStateProvider.notifier);
+
                 return GoogleMap(
                   initialCameraPosition: CameraPosition(
                     target: currentLocation ?? const LatLng(41.3275, 19.8189),
@@ -461,20 +488,22 @@ Future<void> _performSearch({bool searchFromCurrentPosition = true, String? addr
                   ),
                   onMapCreated: (GoogleMapController controller) {
                     mapController = controller;
-                    mapProvider.loadMapStyle(context);
+                    mapStateNotifier.loadMapStyle(context);
                   },
+                  // Apply map style and polylines from mapProvider
                   style: mapProvider.mapStyle,
                   polylines: mapProvider.polylines,
                   markers: markers,
                   zoomControlsEnabled: false,
-                  scrollGesturesEnabled: !_mapInteractionDisabled, 
+                  scrollGesturesEnabled: !_mapInteractionDisabled,
                   zoomGesturesEnabled: !_mapInteractionDisabled,
                   rotateGesturesEnabled: !_mapInteractionDisabled,
                 );
               },
             ),
           ),
-    
+
+          // Show searching animation if the task state is searching
           if (taskState == TaskState.searching)
             Positioned.fill(
               child: Align(
@@ -483,7 +512,7 @@ Future<void> _performSearch({bool searchFromCurrentPosition = true, String? addr
                   alignment: Alignment.center,
                   children: [
                     Opacity(
-                      opacity: 0.6,
+                      opacity: 0.5,
                       child: ClipOval(
                         child: SizedBox(
                           height: 400.w,
@@ -497,7 +526,7 @@ Future<void> _performSearch({bool searchFromCurrentPosition = true, String? addr
                       ),
                     ),
                     Opacity(
-                      opacity: 0.3,
+                      opacity: 0.5,
                       child: SizedBox(
                         height: 300.w,
                         width: 300.w,
@@ -531,14 +560,15 @@ Future<void> _performSearch({bool searchFromCurrentPosition = true, String? addr
               const Expanded(child: SizedBox.shrink()),
             ],
           ),
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInOut,
-            left: 0,
-            right: 0,
-            bottom: taskState == TaskState.profileView || taskState == TaskState.accepted ? 0 : -400.h,
-            child: ProfileContainer(tasker: _currentTasker),
-          ),
+          if (_currentTasker != null)
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOut,
+              left: 0,
+              right: 0,
+              bottom: taskState == TaskState.profileView || taskState == TaskState.accepted ? 0 : -400.h,
+              child: ProfileContainer(tasker: _currentTasker!),
+            ),
         ],
       ),
     ),

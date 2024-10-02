@@ -1,48 +1,28 @@
-import 'package:fit_pro_client/providers/auth_provider.dart';
-import 'package:fit_pro_client/providers/login_validation_provider.dart';
-import 'package:fit_pro_client/providers/task_state_provider.dart';
-import 'package:fit_pro_client/providers/taskers_provider.dart';
-import 'package:fit_pro_client/providers/tasks_provider.dart';
-import 'package:fit_pro_client/screens/home_screen.dart';
-import 'package:fit_pro_client/utils/validators.dart';
+import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl_standalone.dart';
-import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:syncfusion_localizations/syncfusion_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:fit_pro_client/providers/map_provider.dart';
+import 'package:fit_pro_client/screens/home_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  increaseCacheSize();
+  await dotenv.load(fileName: ".env");
 
   await findSystemLocale();
   await initializeDateFormatting('sq', null);
 
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => Validators()),
-        ChangeNotifierProvider(create: (_) => LoginValidationProvider()),
-        ChangeNotifierProvider(create: (_) => MapProvider()),
-        ChangeNotifierProvider(create: (_) => TaskStateProvider()),
-        ChangeNotifierProvider(create: (_) => TaskersProvider()),
-        ChangeNotifierProvider(create: (_) => TasksProvider()),
-      ],
-      child: const MyApp(),
+    const ProviderScope( 
+      child: MyApp(),
     ),
   );
-}
-
-// Function to increase image cache size globally
-void increaseCacheSize() {
-  PaintingBinding.instance.imageCache.maximumSize = 200;  // Cache up to 200 images
-  PaintingBinding.instance.imageCache.maximumSizeBytes = 200 * 1024 * 1024;  // Cache up to 200 MB
 }
 
 class MyApp extends StatelessWidget {
@@ -61,6 +41,11 @@ class MyApp extends StatelessWidget {
           theme: ThemeData(
             textTheme: GoogleFonts.robotoTextTheme(
               Theme.of(context).textTheme,
+            ),
+              textSelectionTheme: const TextSelectionThemeData(
+              cursorColor: AppColors.grey700,
+              selectionColor: AppColors.grey300,
+              selectionHandleColor: AppColors.grey700,
             ),
           ),
           localizationsDelegates: const [

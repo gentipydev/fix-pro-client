@@ -3,19 +3,19 @@ import 'package:fit_pro_client/models/tasker.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:provider/provider.dart';
 import 'package:fit_pro_client/screens/tasker_profile_screen.dart';
-import 'package:fit_pro_client/providers/taskers_provider.dart';
+import 'package:fit_pro_client/providers/taskers_provider.dart';  // Import Riverpod taskersProvider
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';  // Import Riverpod
 
-class FavouriteTaskersScreen extends StatefulWidget {
+class FavouriteTaskersScreen extends ConsumerStatefulWidget {
   const FavouriteTaskersScreen({super.key});
 
   @override
   FavouriteTaskersScreenState createState() => FavouriteTaskersScreenState();
 }
 
-class FavouriteTaskersScreenState extends State<FavouriteTaskersScreen> with SingleTickerProviderStateMixin {
+class FavouriteTaskersScreenState extends ConsumerState<FavouriteTaskersScreen> with SingleTickerProviderStateMixin {
   String _sortBy = 'Emri (A-Z)';
   int _currentIndex = 0;
   TabController? _tabController;
@@ -24,6 +24,10 @@ class FavouriteTaskersScreenState extends State<FavouriteTaskersScreen> with Sin
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+
+    Future.microtask(() {
+      ref.read(taskersProvider.notifier).fetchTaskers();
+    });
   }
 
   void _sortTaskers(String criteria) {
@@ -159,23 +163,29 @@ class FavouriteTaskersScreenState extends State<FavouriteTaskersScreen> with Sin
             ),
           ),
         ),
-        body: Consumer<TaskersProvider>(
-          builder: (context, taskersProvider, child) {
-            final favoriteTaskers = taskersProvider.favoriteTaskers;
-            final pastTaskers = taskersProvider.pastTaskers;
+        body: Consumer(
+          builder: (context, ref, child) {
+            final taskersState = ref.watch(taskersProvider);
+            if (taskersState.isLoading) {
+              return const Center(child: CircularProgressIndicator(color: AppColors.tomatoRed,));
+            }
+            if (taskersState.errorMessage != null) {
+              return Center(child: Text('Error: ${taskersState.errorMessage}'));
+            }
+            final favoriteTaskers = taskersState.favoriteTaskers;
+            final pastTaskers = taskersState.allTaskers;
 
             return TabBarView(
               controller: _tabController,
               physics: const NeverScrollableScrollPhysics(),
               children: [
-                _buildTaskersList(favoriteTaskers, taskersProvider),
-                _buildTaskersList(pastTaskers, taskersProvider),
+                _buildTaskersList(favoriteTaskers, ref),
+                _buildTaskersList(pastTaskers, ref),
               ],
             );
           },
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-
         floatingActionButton: _currentIndex == 1
             ? Padding(
                 padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 10.h),
@@ -210,7 +220,7 @@ class FavouriteTaskersScreenState extends State<FavouriteTaskersScreen> with Sin
     );
   }
 
-  Widget _buildTaskersList(List<Tasker> taskers, TaskersProvider taskersProvider) {
+  Widget _buildTaskersList(List<Tasker> taskers, WidgetRef ref) {
     if (taskers.isEmpty) {
       return Center(
         child: Padding(
@@ -227,7 +237,7 @@ class FavouriteTaskersScreenState extends State<FavouriteTaskersScreen> with Sin
       itemCount: taskers.length,
       itemBuilder: (context, index) {
         final tasker = taskers[index];
-        
+
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 8.h),
           child: TaskerCard(
@@ -241,7 +251,7 @@ class FavouriteTaskersScreenState extends State<FavouriteTaskersScreen> with Sin
               );
             },
             onRemove: () {
-              taskersProvider.removeTaskerFromFavorites(tasker);
+              ref.read(taskersProvider.notifier).updateTaskerFavoriteStatus(tasker.id, false);
             },
           ),
         );

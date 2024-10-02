@@ -1,102 +1,121 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:async';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:logger/logger.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 
-class MapProvider with ChangeNotifier {
-  Logger logger = Logger();
-  String? _mapStyle;
-  String? get mapStyle => _mapStyle;
-  List<String> _fetchedAddresses = [];
+class MapStateData {
+  final String? mapStyle;
+  final Set<Polyline> polylines;
+  final List<String> fetchedAddresses;
 
-  Set<Polyline> _polylines = {};
-  Set<Polyline> get polylines => _polylines;
-  List<String> get fetchedAddresses => _fetchedAddresses;
+  MapStateData({
+    required this.mapStyle,
+    required this.polylines,
+    required this.fetchedAddresses,
+  });
 
-  Future<void> loadMapStyle(BuildContext context) async {
-    _mapStyle = await DefaultAssetBundle.of(context).loadString('assets/map_style.json');
-    notifyListeners();
+  factory MapStateData.initial() {
+    return MapStateData(
+      mapStyle: null,
+      polylines: {},
+      fetchedAddresses: [],
+    );
   }
 
-  Future<LatLngBounds?> fetchRoute(LatLng start, LatLng end) async {
-    try {
-      // Fetch route coordinates from OSRM API
-      List<LatLng> routeCoordinates = await getRouteCoordinates(start, end);
-      
-      // Set the polyline on the map
-      _polylines = {
-        Polyline(
-          polylineId: const PolylineId('route_from_api'),
-          points: routeCoordinates,
-          color: AppColors.black,
-          width: 3,
-        ),
-      };
-      notifyListeners();
+  MapStateData copyWith({
+    String? mapStyle,
+    Set<Polyline>? polylines,
+    List<String>? fetchedAddresses,
+  }) {
+    return MapStateData(
+      mapStyle: mapStyle ?? this.mapStyle,
+      polylines: polylines ?? this.polylines,
+      fetchedAddresses: fetchedAddresses ?? this.fetchedAddresses,
+    );
+  }
+}
 
-      // Calculate bounds that include both markers and polyline
-      LatLngBounds bounds = await _calculateLatLngBounds(routeCoordinates);
-      
-      return bounds;
+class MapStateNotifier extends StateNotifier<MapStateData> {
+  Logger logger = Logger();
+
+  MapStateNotifier() : super(MapStateData.initial());
+
+  // Load the map style from the asset bundle and update state
+  Future<void> loadMapStyle(BuildContext context) async {
+    try {
+      final mapStyle = await DefaultAssetBundle.of(context).loadString('assets/map_style.json');
+      state = state.copyWith(mapStyle: mapStyle);
     } catch (e) {
-      logger.e('Failed to fetch route: $e');
-      return null; // Return null if fetching fails
+      logger.e('Failed to load map style: $e');
     }
   }
 
-  Future<Map<String, dynamic>?> fetchPastTaskRoute(LatLng start, LatLng end) async {
+  // Fetch route and set polylines in the state
+  Future<LatLngBounds?> fetchRoute(LatLng start, LatLng end) async {
     try {
-      // Fetch route coordinates from OSRM API
       List<LatLng> routeCoordinates = await getRouteCoordinates(start, end);
 
-      if (routeCoordinates.isEmpty) {
-        return null;
-      }
+      // Update polylines in the state
+      final polyline = Polyline(
+        polylineId: const PolylineId('route_from_api'),
+        points: routeCoordinates,
+        color: AppColors.black,
+        width: 3,
+      );
 
+      state = state.copyWith(polylines: {polyline});
+
+      // Calculate bounds
       LatLngBounds bounds = await _calculateLatLngBounds(routeCoordinates);
-      
-      // Return both the bounds and the route coordinates
-      return {
-        'bounds': bounds,
-        'routeCoordinates': routeCoordinates,
-      };
+      return bounds;
     } catch (e) {
       logger.e('Failed to fetch route: $e');
       return null;
     }
   }
 
+  // Fetch route and return both bounds and coordinates for past task
+  Future<Map<String, dynamic>?> fetchPastTaskRoute(LatLng start, LatLng end) async {
+    try {
+      List<LatLng> routeCoordinates = await getRouteCoordinates(start, end);
+      if (routeCoordinates.isEmpty) return null;
+
+      LatLngBounds bounds = await _calculateLatLngBounds(routeCoordinates);
+      return {
+        'bounds': bounds,
+        'routeCoordinates': routeCoordinates,
+      };
+    } catch (e) {
+      logger.e('Failed to fetch past task route: $e');
+      return null;
+    }
+  }
+
+  // Get route coordinates using Google Directions API
   Future<List<LatLng>> getRouteCoordinates(LatLng start, LatLng end, {int retries = 3}) async {
-    const String googleApiKey = 'AIzaSyDTsA-ao5QZRG8ZDb0O3RxRlk2mytT1wGo';
+    final String? googleApiKey = dotenv.env['GOOGLE_API_KEY'];
     final String directionsUrl =
         'https://maps.googleapis.com/maps/api/directions/json?origin=${start.latitude},${start.longitude}&destination=${end.latitude},${end.longitude}&mode=driving&key=$googleApiKey';
 
-    int attempt = 0;
-    while (attempt < retries) {
+    for (int attempt = 0; attempt < retries; attempt++) {
       try {
-        // Perform the HTTP request with a timeout
-        final response = await http
-            .get(Uri.parse(directionsUrl))
-            .timeout(const Duration(seconds: 10));
+        final response = await http.get(Uri.parse(directionsUrl)).timeout(const Duration(seconds: 10));
 
         if (response.statusCode == 200) {
-          // Decode the JSON response and check for valid routes
           final decodedJson = jsonDecode(response.body);
           if (decodedJson['routes'] != null &&
               decodedJson['routes'].isNotEmpty &&
               decodedJson['routes'][0]['overview_polyline'] != null) {
             final polyline = decodedJson['routes'][0]['overview_polyline']['points'];
-
-            // Decode the polyline to get the route coordinates
             List<LatLng> routeCoordinates = await decodePolyline(polyline);
 
-            // Fix the first and last points to exactly match the start and end
             if (routeCoordinates.isNotEmpty) {
               routeCoordinates[0] = start;
               routeCoordinates[routeCoordinates.length - 1] = end;
@@ -104,29 +123,14 @@ class MapProvider with ChangeNotifier {
 
             return routeCoordinates;
           } else {
-            throw Exception('No route found in response');
+            throw Exception('No route found');
           }
         } else {
-          logger.e('Failed to fetch route, status code: ${response.statusCode}');
-          throw Exception('Failed to fetch route');
+          throw Exception('Failed to fetch route, status code: ${response.statusCode}');
         }
-      } on SocketException catch (e) {
-        logger.e('Network error: $e');
-      } on TimeoutException catch (e) {
-        logger.e('Request timed out: $e');
       } catch (e) {
-        logger.e('Unexpected error: $e');
-        if (e.toString().contains('ClientException')) {
-          logger.e('Retrying due to ClientException...');
-        } else {
-          rethrow; // Rethrow other errors
-        }
-      }
-
-      // Delay before retrying
-      attempt++;
-      if (attempt < retries) {
-        logger.d('Retrying... Attempt $attempt of $retries');
+        if (attempt == retries - 1) rethrow; // On last attempt, rethrow the error
+        logger.e('Retrying... Attempt $attempt of $retries');
         await Future.delayed(const Duration(seconds: 2));
       }
     }
@@ -134,18 +138,14 @@ class MapProvider with ChangeNotifier {
     throw Exception('Failed to fetch route after $retries attempts');
   }
 
+  // Decode the polyline string into LatLng points
   Future<List<LatLng>> decodePolyline(String polylineString) async {
     PolylinePoints polylinePoints = PolylinePoints();
-
-    // Decode the polyline string into a list of PointLatLng objects
     List<PointLatLng> result = polylinePoints.decodePolyline(polylineString);
-
-    // Convert PointLatLng to LatLng for Google Maps
-    List<LatLng> coordinates = result.map((point) => LatLng(point.latitude, point.longitude)).toList();
-
-    return coordinates;
+    return result.map((point) => LatLng(point.latitude, point.longitude)).toList();
   }
 
+  // Calculate the bounds for a list of LatLng points
   Future<LatLngBounds> _calculateLatLngBounds(List<LatLng> polylinePoints) async {
     double minLat = polylinePoints.first.latitude;
     double minLng = polylinePoints.first.longitude;
@@ -165,26 +165,24 @@ class MapProvider with ChangeNotifier {
     );
   }
 
+  // Clear polylines from the state
   void clearPolylines() {
-    _polylines = {};
-    notifyListeners();
+    state = state.copyWith(polylines: {});
   }
 
+  // Get LatLng from an address
   Future<LatLng> getLatLngFromAddress(String address) async {
-    const String googleApiKey = 'AIzaSyDTsA-ao5QZRG8ZDb0O3RxRlk2mytT1wGo';
+    final String? googleApiKey = dotenv.env['GOOGLE_API_KEY'];
     final String url =
         'https://maps.googleapis.com/maps/api/geocode/json?address=${Uri.encodeComponent(address)}&key=$googleApiKey';
 
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
-
+      final data = jsonDecode(response.body);
       if (data['results'] != null && data['results'].isNotEmpty) {
         final location = data['results'][0]['geometry']['location'];
-        final double latitude = location['lat'];
-        final double longitude = location['lng'];
-        return LatLng(latitude, longitude);
+        return LatLng(location['lat'], location['lng']);
       } else {
         throw Exception('No results found for this address');
       }
@@ -193,8 +191,9 @@ class MapProvider with ChangeNotifier {
     }
   }
 
+  // Get address from LatLng
   Future<String> getAddressFromLatLng(LatLng location, {bool isFullAddress = true}) async {
-    const String googleApiKey = 'AIzaSyDTsA-ao5QZRG8ZDb0O3RxRlk2mytT1wGo';
+    final String? googleApiKey = dotenv.env['GOOGLE_API_KEY'];
     final String url =
         'https://maps.googleapis.com/maps/api/geocode/json?latlng=${location.latitude},${location.longitude}&key=$googleApiKey';
 
@@ -205,8 +204,6 @@ class MapProvider with ChangeNotifier {
 
       if (data['results'] != null && data['results'].isNotEmpty) {
         final addressComponents = data['results'][0]['address_components'];
-        logger.d("addressComponents: $addressComponents");
-
         // Extract address parts
         String houseNumber = '';
         String road = '';
@@ -244,7 +241,6 @@ class MapProvider with ChangeNotifier {
             if (road.isNotEmpty) road,
             if (city.isNotEmpty) city,
           ];
-          logger.d("road: $road");
           return shortAddressParts.join(', ');
         }
       } else {
@@ -255,17 +251,10 @@ class MapProvider with ChangeNotifier {
     }
   }
 
-  Future<double> calculateDistance(LatLng start, LatLng end) async {
-    return Geolocator.distanceBetween(
-      start.latitude, start.longitude,
-      end.latitude, end.longitude
-    );
-  }
-
+  // Fetch place suggestions from Google Places API
   Future<void> fetchAddresses(String input) async {
-    const String googleApiKey = 'AIzaSyDTsA-ao5QZRG8ZDb0O3RxRlk2mytT1wGo';
+    final String? googleApiKey = dotenv.env['GOOGLE_API_KEY'];
     const String baseUrl = 'https://maps.googleapis.com/maps/api/place/autocomplete/json';
-    
     const String locationBias = '41.3275,19.8189';
     const String radius = '50000';
 
@@ -275,22 +264,24 @@ class MapProvider with ChangeNotifier {
     final response = await http.get(uri);
 
     if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
+      final data = jsonDecode(response.body);
+      final fetchedAddresses = (data['predictions'] as List).map<String>((item) {
+        return item['description'] as String;
+      }).toList();
 
-      logger.d("API Response: ${response.body}");
-
-      if (data['predictions'] != null) {
-        _fetchedAddresses = data['predictions'].map<String>((item) {
-          return item['description'] as String;
-        }).toList();
-
-        logger.d("Fetched Addresses (Suggestions for Tirana): $_fetchedAddresses");
-        notifyListeners();
-      } else {
-        throw Exception('No predictions found for the input');
-      }
+      state = state.copyWith(fetchedAddresses: fetchedAddresses);
     } else {
-      throw Exception('Failed to load place suggestions from Google Places API');
+      throw Exception('Failed to fetch address suggestions');
     }
   }
+
+  // Calculate the distance between two LatLng points
+  Future<double> calculateDistance(LatLng start, LatLng end) async {
+    return Geolocator.distanceBetween(start.latitude, start.longitude, end.latitude, end.longitude);
+  }
 }
+
+// Provider for MapStateNotifier
+final mapStateProvider = StateNotifierProvider<MapStateNotifier, MapStateData>(
+  (ref) => MapStateNotifier(),
+);

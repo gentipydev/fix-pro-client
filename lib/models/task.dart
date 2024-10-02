@@ -24,14 +24,15 @@ class Task {
   final String? taskerArea;
   final String? taskPlaceDistance;
   final String? userArea;
-  final List<String>? taskTools;
-  final String? paymentMethod; 
-  final String? promoCode;
   final String? taskFullAddress;
-  final String? taskDetails;
-  final String? taskEvaluation;
-  final String? taskExtraDetails;
+  List<String>? taskTools;
+  String? paymentMethod; 
+  String? promoCode;
+  String? taskDetails;
+  String? taskEvaluation;
+  String? taskExtraDetails;
   TaskStatus status;
+  bool bringOwnTools;
 
   static const _uuid = Uuid();
 
@@ -43,7 +44,7 @@ class Task {
     required this.userLocation,
     required this.taskerLocation,
     required this.polylineCoordinates,
-    this.bounds,  // Make bounds optional
+    this.bounds,
     required this.taskWorkGroup,
     required this.date,
     required this.time,
@@ -58,6 +59,7 @@ class Task {
     this.taskEvaluation,
     this.taskExtraDetails,
     required this.status,
+    this.bringOwnTools = true,
   }) : id = id ?? _uuid.v4();
 
   // Factory method to create a Task from a JSON object
@@ -102,6 +104,7 @@ class Task {
       taskEvaluation: json['taskEvaluation'],
       taskExtraDetails: json['taskExtraDetails'],
       status: TaskStatus.values.firstWhere((e) => e.toString() == 'TaskStatus.${json['status']}'),
+      bringOwnTools: json['bringOwnTools'] ?? true,
     );
   }
 
@@ -142,6 +145,7 @@ class Task {
       'taskEvaluation': taskEvaluation,
       'taskExtraDetails': taskExtraDetails,
       'status': status.toString().split('.').last,
+      'bringOwnTools': bringOwnTools,
     };
   }
 }

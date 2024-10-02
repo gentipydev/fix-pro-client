@@ -1,21 +1,21 @@
 import 'package:fit_pro_client/cards/task_card.dart';
-import 'package:fit_pro_client/providers/tasks_provider.dart';
+import 'package:fit_pro_client/screens/task_details_screen.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:logger/logger.dart';
-import 'package:provider/provider.dart';
-import 'task_details_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fit_pro_client/providers/tasks_provider.dart';
 
-class TasksScreen extends StatefulWidget {
+class TasksScreen extends ConsumerStatefulWidget {
   const TasksScreen({super.key});
 
   @override
   TasksScreenState createState() => TasksScreenState();
 }
 
-class TasksScreenState extends State<TasksScreen> with SingleTickerProviderStateMixin {
+class TasksScreenState extends ConsumerState<TasksScreen> with SingleTickerProviderStateMixin {
   Logger logger = Logger();
   String _sortBy = 'Data (më të rejat fillimisht)';
   int _currentIndex = 0;
@@ -25,8 +25,9 @@ class TasksScreenState extends State<TasksScreen> with SingleTickerProviderState
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<TasksProvider>(context, listen: false).fetchTasks();
+      ref.read(tasksProvider.notifier).fetchTasks();
     });
   }
 
@@ -138,6 +139,8 @@ class TasksScreenState extends State<TasksScreen> with SingleTickerProviderState
 
   @override
   Widget build(BuildContext context) {
+    final tasksState = ref.watch(tasksProvider);
+
     return DefaultTabController(
       length: 2,
       initialIndex: _currentIndex,
@@ -175,131 +178,126 @@ class TasksScreenState extends State<TasksScreen> with SingleTickerProviderState
             ),
           ),
         ),
-        body: Consumer<TasksProvider>(
-          builder: (context, tasksProvider, child) {
-            if (tasksProvider.isLoading) {
-              return const Center(
+        body: tasksState.isLoading
+            ? const Center(
                 child: CircularProgressIndicator(color: AppColors.tomatoRed),
-              );
-            }
-            return TabBarView(
-              controller: _tabController,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                // Current tasks tab content
-                SingleChildScrollView(
-                  child: Padding(
-                    padding: EdgeInsets.all(16.w),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'PUNËT E REJA (${tasksProvider.currentTasks.length})',
-                          style: TextStyle(fontSize: 16.sp, color: AppColors.grey700),
-                        ),
-                        SizedBox(height: 16.h),
-                        if (tasksProvider.currentTasks.isEmpty)
-                          Center(
-                            child: Text(
-                              'Nuk ka asnjë punë për momentin',
-                              style: TextStyle(fontSize: 18.sp, color: AppColors.grey700),
-                            ),
-                          )
-                        else
-                          Column(
-                            children: tasksProvider.currentTasks.map((task) {
-                              return Padding(
-                                padding: EdgeInsets.only(bottom: 8.h),
-                                child: GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => TaskDetailsScreen(task: task),
-                                      ),
-                                    );
-                                  },
-                                  child: TaskCard(
-                                    title: task.taskWorkGroup.title,
-                                    warningText: 'Kjo punë është në proçes',
-                                    date: task.date,
-                                    time: task.time,
-                                    location: task.taskerArea!,
-                                    clientName: task.tasker.fullName,
-                                    clientImage: task.tasker.profileImage,
-                                    showLottieIcon: true,
-                                    isUrgent: true,
-                                  ),
-                                ),
-                              );
-                            }).toList(),
+              )
+            : TabBarView(
+                controller: _tabController,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  // Current tasks tab content
+                  SingleChildScrollView(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'PUNËT E REJA (${tasksState.currentTasks.length})',
+                            style: TextStyle(fontSize: 16.sp, color: AppColors.grey700),
                           ),
-                      ],
-                    ),
-                  ),
-                ),
-                // Past tasks tab content
-                SingleChildScrollView(
-                  child: Padding(
-                    padding: EdgeInsets.all(16.w),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
+                          SizedBox(height: 16.h),
+                          if (tasksState.currentTasks.isEmpty)
+                            Center(
                               child: Text(
-                                'PUNËT E KALUARA (${tasksProvider.pastTasks.length})',
-                                style: TextStyle(fontSize: 16.sp, color: AppColors.grey700),
+                                'Nuk ka asnjë punë për momentin',
+                                style: TextStyle(fontSize: 18.sp, color: AppColors.grey700),
                               ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 16.h),
-                        if (tasksProvider.pastTasks.isEmpty)
-                          Center(
-                            child: Text(
-                              'Nuk ka asnjë punë të kaluar',
-                              style: TextStyle(fontSize: 18.sp, color: AppColors.grey700),
-                            ),
-                          )
-                        else
-                          Column(
-                            children: tasksProvider.pastTasks.map((task) {
-                              return Padding(
-                                padding: EdgeInsets.only(bottom: 8.h),
-                                child: GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => TaskDetailsScreen(task: task),
-                                      ),
-                                    );
-                                  },
-                                  child: TaskCard(
-                                    title: task.taskWorkGroup.title,
-                                    warningText: 'Puna u përfundua',
-                                    date: task.date,
-                                    time: task.time,
-                                    location: task.taskerArea!,
-                                    clientName: task.tasker.fullName,
-                                    clientImage: task.tasker.profileImage,
-                                    showLottieIcon: false,
+                            )
+                          else
+                            Column(
+                              children: tasksState.currentTasks.map((task) {
+                                return Padding(
+                                  padding: EdgeInsets.only(bottom: 8.h),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => TaskDetailsScreen(task: task),
+                                        ),
+                                      );
+                                    },
+                                    child: TaskCard(
+                                      title: task.taskWorkGroup.title,
+                                      warningText: 'Kjo punë është në proçes',
+                                      date: task.date,
+                                      time: task.time,
+                                      location: task.taskerArea!,
+                                      clientName: task.tasker.fullName,
+                                      clientImage: task.tasker.profileImage,
+                                      showLottieIcon: true,
+                                      isUrgent: true,
+                                    ),
                                   ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                      ],
+                                );
+                              }).toList(),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
-            );
-          },
-        ),
+                  // Past tasks tab content
+                  SingleChildScrollView(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'PUNËT E KALUARA (${tasksState.pastTasks.length})',
+                                  style: TextStyle(fontSize: 16.sp, color: AppColors.grey700),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 16.h),
+                          if (tasksState.pastTasks.isEmpty)
+                            Center(
+                              child: Text(
+                                'Nuk ka asnjë punë të kaluar',
+                                style: TextStyle(fontSize: 18.sp, color: AppColors.grey700),
+                              ),
+                            )
+                          else
+                            Column(
+                              children: tasksState.pastTasks.map((task) {
+                                return Padding(
+                                  padding: EdgeInsets.only(bottom: 8.h),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => TaskDetailsScreen(task: task),
+                                        ),
+                                      );
+                                    },
+                                    child: TaskCard(
+                                      title: task.taskWorkGroup.title,
+                                      warningText: 'Puna u përfundua',
+                                      date: task.date,
+                                      time: task.time,
+                                      location: task.taskerArea!,
+                                      clientName: task.tasker.fullName,
+                                      clientImage: task.tasker.profileImage,
+                                      showLottieIcon: false,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton: (_currentIndex == 1 || _currentIndex == 2)
             ? Padding(

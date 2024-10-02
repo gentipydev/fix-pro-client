@@ -1,77 +1,77 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fit_pro_client/models/task.dart';
 import 'package:fit_pro_client/models/task_group.dart';
 import 'package:fit_pro_client/models/tasker.dart';
 import 'package:fit_pro_client/models/user.dart';
 import 'package:fit_pro_client/services/tasks_service.dart';
-import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:logger/logger.dart';
 
-class TasksProvider with ChangeNotifier {
-  Logger logger = Logger();
-  final TasksService _tasksService = TasksService();
+class TasksState {
+  final List<Task> currentTasks;
+  final List<Task> pastTasks;
+  final bool isLoading;
+  final String? errorMessage;
+  final int acceptedTaskCount;
 
-  List<Task> _currentTasks = [];
-  List<Task> _pastTasks = [];
+  TasksState({
+    required this.currentTasks,
+    required this.pastTasks,
+    required this.isLoading,
+    this.errorMessage,
+    required this.acceptedTaskCount,
+  });
 
-  List<Task> get currentTasks => _currentTasks;
-  List<Task> get pastTasks => _pastTasks;
-
-  bool _isLoading = false;
-  bool get isLoading => _isLoading;
-
-  int get acceptedTaskCount {
-    return _currentTasks.where((task) => task.status == TaskStatus.accepted).length;
+  factory TasksState.initial() {
+    return TasksState(
+      currentTasks: [],
+      pastTasks: [],
+      isLoading: false,
+      errorMessage: null,
+      acceptedTaskCount: 0,
+    );
   }
+}
 
-  TasksProvider() {
-    fetchTasks();
-  }
+class TasksNotifier extends StateNotifier<TasksState> {
+  final TasksService _tasksService;
 
-  /// Fetch both current and past tasks from the service
+  TasksNotifier(this._tasksService) : super(TasksState.initial());
+
+  // Fetch tasks from service
   Future<void> fetchTasks() async {
-    _isLoading = true;
-    notifyListeners();
+    state = TasksState(
+      currentTasks: state.currentTasks,
+      pastTasks: state.pastTasks,
+      isLoading: true,
+      acceptedTaskCount: state.acceptedTaskCount, // Keep the counter
+    );
 
     try {
-      _currentTasks = await _tasksService.fetchCurrentTasks();
-      _pastTasks = await _tasksService.fetchPastTasks();
-    } catch (error) {
-      logger.e("Failed to fetch tasks: $error");
-    }
+      final currentTasks = await _tasksService.fetchCurrentTasks();
+      final pastTasks = await _tasksService.fetchPastTasks();
 
-    _isLoading = false;
-    notifyListeners();
-  }
+      // Count accepted tasks
+      final acceptedTasks = currentTasks.where((task) => task.status == TaskStatus.accepted).length;
 
-  /// Remove a task by its ID
-  void removeTask(String taskId) {
-    _tasksService.deleteTask(taskId);
-
-    // Remove from the current list
-    _currentTasks.removeWhere((task) => task.id == taskId);
-    
-    // Notify listeners about the update
-    notifyListeners();
-    
-    logger.d("Task with id $taskId removed.");
-  }
-
-  /// Update the status of a task and refresh task lists
-  void updateTaskStatus(String taskId, TaskStatus newStatus) {
-    try {
-      _tasksService.updateTaskStatus(taskId, newStatus);
-
-      // Refresh tasks after updating status
-      fetchTasks();
-
-      logger.d("Task status updated and tasks re-fetched.");
+      state = TasksState(
+        currentTasks: currentTasks,
+        pastTasks: pastTasks,
+        isLoading: false,
+        acceptedTaskCount: acceptedTasks, // Set the counter with the new accepted task count
+      );
     } catch (e) {
-      logger.e("Error updating task status: $e");
+      state = TasksState(
+        currentTasks: [],
+        pastTasks: [],
+        isLoading: false,
+        errorMessage: 'Failed to load tasks',
+        acceptedTaskCount: state.acceptedTaskCount, // Keep the previous count
+      );
     }
   }
 
-  void createTask({
+  Task createTask({
     required User client,
     required Tasker tasker,
     required LatLng userLocation,
@@ -79,7 +79,6 @@ class TasksProvider with ChangeNotifier {
     required DateTime date,
     required TimeOfDay time,
     required TaskGroup taskWorkGroup,
-    TaskStatus status = TaskStatus.accepted,
     String? taskerArea,
     String? taskPlaceDistance,
     String? userArea,
@@ -90,8 +89,9 @@ class TasksProvider with ChangeNotifier {
     String? taskDetails,
     String? taskEvaluation,
     String? taskExtraDetails,
+    TaskStatus status = TaskStatus.accepted,
   }) {
-    _tasksService.createTask(
+    final newTask = _tasksService.createTask(
       client: client,
       tasker: tasker,
       userLocation: userLocation,
@@ -99,7 +99,6 @@ class TasksProvider with ChangeNotifier {
       date: date,
       time: time,
       taskWorkGroup: taskWorkGroup,
-      status: status,
       taskerArea: taskerArea,
       taskPlaceDistance: taskPlaceDistance,
       userArea: userArea,
@@ -110,10 +109,26 @@ class TasksProvider with ChangeNotifier {
       taskDetails: taskDetails,
       taskEvaluation: taskEvaluation,
       taskExtraDetails: taskExtraDetails,
+      status: status,
     );
 
-    // Re-fetch tasks to reflect the new task
-    fetchTasks();
+    // Increment accepted task count if the task is accepted
+    final updatedAcceptedTaskCount = (status == TaskStatus.accepted)
+        ? state.acceptedTaskCount + 1
+        : state.acceptedTaskCount;
 
+    state = TasksState(
+      currentTasks: [...state.currentTasks, newTask],
+      pastTasks: state.pastTasks,
+      isLoading: false,
+      acceptedTaskCount: updatedAcceptedTaskCount,
+    );
+
+    return newTask;
   }
 }
+
+// Provider for TasksNotifier
+final tasksProvider = StateNotifierProvider<TasksNotifier, TasksState>(
+  (ref) => TasksNotifier(TasksService()),
+);

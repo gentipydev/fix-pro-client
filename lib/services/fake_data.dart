@@ -1,10 +1,13 @@
 import 'dart:math';
 import 'package:fit_pro_client/models/review.dart';
+import 'package:fit_pro_client/models/task.dart';
 import 'package:fit_pro_client/models/task_group.dart';
 import 'package:fit_pro_client/models/tasker.dart';
 import 'package:fit_pro_client/models/tasker_skill.dart';
 import 'package:fit_pro_client/models/user.dart';
 import 'package:fit_pro_client/models/availability.dart';
+import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class FakeData {
   // Fake Task Groups
@@ -224,6 +227,7 @@ class FakeData {
 
   late final List<Tasker> fakeTaskers;
   late final List<Review> fakeReviews;
+  late final List<Task> fakeTasks;
 
   // Constructor to initialize fakeTaskers after fakeTaskGroups are available
   FakeData() {
@@ -324,5 +328,77 @@ class FakeData {
         skills: convertTaskGroupsToSkills(fakeTaskGroups.skip(3).take(3).toList()),
       ),
     ];
+
+      fakeTasks = [
+        Task(
+          id: "2",
+          client: fakeUser,
+          tasker: fakeTaskers[1],
+          userLocation: const LatLng(41.3275, 19.8189),
+          taskerLocation: const LatLng(41.3317, 19.8345),
+          polylineCoordinates: [],
+          bounds: null,
+          taskWorkGroup: fakeTaskGroups[1],
+          date: DateTime.parse("2024-05-28"),
+          time: const TimeOfDay(hour: 16, minute: 0),
+          taskerArea: "Lagjja Nr.1, Tirane",
+          taskPlaceDistance: '1.5',
+          userArea: "Durres",
+          taskTools: ["Wrench", "Pliers"],
+          paymentMethod: "Credit Card",
+          promoCode: null,
+          taskFullAddress: "Durres, Lagjja Nr.1, Pallati 12, Hyrja 3",
+          taskDetails: "Zëvendësimi i rubinetave të vjetra me të reja",
+          taskEvaluation: "Shpejtë - Vlerësuar 1-2 orë",
+          taskExtraDetails: "Veglat e duhura për rubinetë",
+          status: TaskStatus.past,
+        ),
+        Task(
+          id: "3",
+          client: fakeUser,
+          tasker: fakeTaskers[2],
+          userLocation: const LatLng(41.3275, 19.8189),
+          taskerLocation: const LatLng(41.3317, 19.8345),
+          polylineCoordinates: [],
+          bounds: null,
+          taskWorkGroup: fakeTaskGroups[6],
+          date: DateTime.parse("2024-06-06"),
+          time: const TimeOfDay(hour: 13, minute: 0),
+          taskerArea: "Fresk, Tirane",
+          taskPlaceDistance: '0.8',
+          userArea: "Tirane",
+          taskTools: ["Shower installation tools"],
+          paymentMethod: "Cash",
+          promoCode: "SHOWER123",
+          taskFullAddress: "Vlore, Rruga Ismail Qemali, Ndërtesa 5, Apartamenti 8",
+          taskDetails: "Instalimi i kabinës së dushit me të gjitha aksesorët",
+          taskEvaluation: "Normale - Vlerësuar 2-3 orë",
+          taskExtraDetails: "Profesionisti duhet të sjellë veglat e veta",
+          status: TaskStatus.past,
+        ),
+        Task(
+          id: "4",
+          client: fakeUser,
+          tasker: fakeTaskers[3],
+          userLocation: const LatLng(41.3275, 19.8189),
+          taskerLocation: const LatLng(41.3317, 19.8345),
+          polylineCoordinates: [],
+          bounds: null,
+          taskWorkGroup: fakeTaskGroups[10],
+          date: DateTime.parse("2024-06-07"),
+          time: const TimeOfDay(hour: 14, minute: 0),
+          taskerArea: "Rruga George W Bush, Tirane",
+          taskPlaceDistance: '3.2',
+          userArea: "Tirane",
+          taskTools: ["Air conditioning tools"],
+          paymentMethod: "Cash",
+          promoCode: null,
+          taskFullAddress: "Tirane, Rruga George W Bush, Ndërtesa 10, Apartamenti 12",
+          taskDetails: "Instalimi i kondicionerit dhe lidhja me sistemin elektrik",
+          taskEvaluation: "E gjatë - Vlerësuar 3-4 orë",
+          taskExtraDetails: "Profesionisti duhet të sjellë veglat e veta",
+          status: TaskStatus.past,
+        ),
+      ];
   }
 }

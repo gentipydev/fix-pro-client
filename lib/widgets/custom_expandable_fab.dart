@@ -7,26 +7,28 @@ import 'package:fit_pro_client/services/communication_service.dart';
 import 'package:fit_pro_client/services/fake_data.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:logger/logger.dart';
 import 'package:lottie/lottie.dart';
-import 'package:provider/provider.dart';
 
-class ExpandableFab extends StatefulWidget {
+class ExpandableFab extends ConsumerStatefulWidget {
   final String phoneNumber;
+  final Function(Task task) onTaskAccepted;
 
   const ExpandableFab({
     super.key,
     required this.phoneNumber,
+    required this.onTaskAccepted,
   });
 
   @override
   ExpandableFabState createState() => ExpandableFabState();
 }
 
-class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderStateMixin {
+class ExpandableFabState extends ConsumerState<ExpandableFab> with SingleTickerProviderStateMixin {
   Logger logger = Logger();
   late AnimationController animationController;
   late Animation rotationAnimation;
@@ -85,8 +87,7 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
 
   @override
   Widget build(BuildContext context) {
-    final taskStateProvider = context.watch<TaskStateProvider>();
-    final currentTaskState = taskStateProvider.taskState;
+    final taskState = ref.watch(taskStateProvider).taskState;
 
     return Container(
       color: Colors.transparent,
@@ -173,18 +174,18 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
                             animate: true,
                           )
                         : Text(
-                            currentTaskState == TaskState.accepted ? "Kontakto" : "Prano",
+                            taskState == TaskState.accepted ? "Kontakto" : "Prano",
                             style: TextStyle(
                               color: AppColors.grey700,
                               fontSize: 16.sp,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                onClick: currentTaskState == TaskState.accepted
+                onClick: taskState == TaskState.accepted
                     ? _onContactPressed
                     : () async {
                         // Set task state to accepted
-                        context.read<TaskStateProvider>().setTaskState(TaskState.accepted);
+                        ref.read(taskStateProvider.notifier).setTaskState(TaskState.accepted);
 
                         // Start loading
                         setState(() {
@@ -192,13 +193,14 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
                         });
 
                         // Fetch required providers and data
-                        final tasksProvider = context.read<TasksProvider>();
-                        final taskStateProvider = context.read<TaskStateProvider>();
-                        final mapProvider = context.read<MapProvider>();
-                        final fakeData = FakeData();
+                            // Fetch providers and data using ref.read
+                            final mapProvider = ref.read(mapStateProvider.notifier);
+                            final taskStateData = ref.read(taskStateProvider);
+                            final tasksNotifier = ref.read(tasksProvider.notifier);
+                            final fakeData = FakeData();
 
-                        LatLng? userLocation = taskStateProvider.currentSearchLocation;
-                        LatLng? taskerLocation = taskStateProvider.taskerLocation;
+                        LatLng? userLocation = taskStateData.currentSearchLocation;
+                        LatLng? taskerLocation = taskStateData.taskerLocation;
 
                         if (userLocation == null || taskerLocation == null) {
                           logger.e("User or Tasker location is missing");
@@ -207,27 +209,28 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
                           });
                           return;
                         }
+                        // imitating the network request
+                        await Future.delayed(const Duration(milliseconds: 800));
 
                         try {
                           String taskerArea = await mapProvider.getAddressFromLatLng(taskerLocation, isFullAddress: false);
                           String taskFullAddress = await mapProvider.getAddressFromLatLng(taskerLocation, isFullAddress: true);
-
                           double taskerPlaceDistance = await mapProvider.calculateDistance(userLocation, taskerLocation);
                           double distanceInKm = taskerPlaceDistance / 1000;
                           String formattedDistance = distanceInKm.toStringAsFixed(1);
 
-                          Tasker currentTasker = fakeData.fakeTaskers[taskStateProvider.currentTaskerIndex];
+                          Tasker currentTasker = fakeData.fakeTaskers[taskStateData.currentTaskerIndex];
+                          logger.d("selectedTaskGroup: ${taskStateData.selectedTaskGroup}");
 
-                          // Create the task using the retrieved locations and tasker area
-                          tasksProvider.createTask(
+                          Task newTask = tasksNotifier.createTask(
                             client: fakeData.fakeUser,
                             tasker: currentTasker,
                             userLocation: userLocation,
                             taskerLocation: taskerLocation,
                             date: DateTime.now(),
                             time: TimeOfDay.now(),
-                            taskWorkGroup: taskStateProvider.selectedTaskGroup!,
-                            taskerArea: taskerArea, 
+                            taskWorkGroup: taskStateData.selectedTaskGroup!,
+                            taskerArea: taskerArea,
                             taskPlaceDistance: formattedDistance,
                             taskFullAddress: taskFullAddress,
                             taskDetails: '',
@@ -239,9 +242,12 @@ class ExpandableFabState extends State<ExpandableFab> with SingleTickerProviderS
                             userArea: '',
                             status: TaskStatus.accepted,
                           );
+
+                          widget.onTaskAccepted(newTask);
                         } catch (e) {
                           logger.e("Failed to fetch tasker area: $e");
                         }
+
                         // Stop loading after task creation
                         setState(() {
                           isLoading = false;

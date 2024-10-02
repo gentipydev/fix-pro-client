@@ -1,4 +1,5 @@
 import 'package:fit_pro_client/screens/invite_friend_screen.dart';
+import 'package:fit_pro_client/screens/profile_screen/statistics_screen.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -83,15 +84,21 @@ class UserProfileScreen extends StatelessWidget {
               title: 'Metodat e Pagesës',
               subtitle: 'Shto, modifiko, ose hiq opsionet e pagesave',
               onTap: () {
-                // Navigate to the payment methods screen
+                // Navigator.push(
+                //   context,
+                //   MaterialPageRoute(builder: (context) => const PaymentScreen()),
+                // );
               },
             ),
             _buildProfileOption(
               context: context,
-              title: 'Vlerësimet dhe komentet',
-              subtitle: 'Shiko vlerësimet që ke dhënë',
+              title: 'Statistikat e punëve',
+              subtitle: 'Shiko performancën, vlerësimet dhe komentet për punët e porositura',
               onTap: () {
-                // Navigate to reviews and ratings screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const UserStatisticsScreen()),
+                );
               },
             ),
             _buildProfileOption(

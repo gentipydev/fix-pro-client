@@ -8,13 +8,13 @@ import 'package:fit_pro_client/services/fake_data.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:fit_pro_client/widgets/video_player_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:logger/logger.dart';
-import 'package:provider/provider.dart';
 
-class TaskerProfileScreen extends StatefulWidget {
+class TaskerProfileScreen extends ConsumerStatefulWidget {
   final Tasker tasker;
 
   const TaskerProfileScreen({super.key, required this.tasker});
@@ -23,57 +23,55 @@ class TaskerProfileScreen extends StatefulWidget {
   TaskerProfileScreenState createState() => TaskerProfileScreenState();
 }
 
-class TaskerProfileScreenState extends State<TaskerProfileScreen> {
+class TaskerProfileScreenState extends ConsumerState<TaskerProfileScreen> {
   Logger logger = Logger();
   bool isLoadingAccept = false; 
   bool isLoadingReject = false; 
   bool _showAllReviews = false;
 
-  void _handleAcceptTask() async {
+  Future<Task?> _handleAcceptTask() async {
     setState(() {
       isLoadingAccept = true;
     });
 
-    // Simulate a network request
-    await Future.delayed(const Duration(seconds: 1));
+    await Future.delayed(const Duration(milliseconds: 500));
 
-    // Fetch required providers and data
-    final tasksProvider = context.read<TasksProvider>();
-    final taskStateProvider = context.read<TaskStateProvider>();
-    final mapProvider = context.read<MapProvider>();
+    final tasksNotifier = ref.read(tasksProvider.notifier);
+    final taskStateNotifier = ref.read(taskStateProvider.notifier);
+    final mapStateNotifier = ref.read(mapStateProvider.notifier);
     final fakeData = FakeData();
 
-    LatLng? userLocation = taskStateProvider.currentSearchLocation;
-    LatLng? taskerLocation = taskStateProvider.taskerLocation;
+    LatLng? userLocation = ref.read(taskStateProvider).currentSearchLocation;
+    LatLng? taskerLocation = ref.read(taskStateProvider).taskerLocation;
 
     if (userLocation == null || taskerLocation == null) {
       logger.e("User or Tasker location is missing");
       setState(() {
-        isLoadingAccept = true; // Stop loading in case of missing locations
+        isLoadingAccept = false;
       });
-      return;
+      return null;
     }
 
     try {
-      String taskerArea = await mapProvider.getAddressFromLatLng(taskerLocation, isFullAddress: false);
-      String taskFullAddress = await mapProvider.getAddressFromLatLng(taskerLocation, isFullAddress: true);
+      String taskerArea = await mapStateNotifier.getAddressFromLatLng(taskerLocation, isFullAddress: false);
+      String taskFullAddress = await mapStateNotifier.getAddressFromLatLng(taskerLocation, isFullAddress: true);
 
-      double taskerPlaceDistance = await mapProvider.calculateDistance(userLocation, taskerLocation);
+      double taskerPlaceDistance = await mapStateNotifier.calculateDistance(userLocation, taskerLocation);
       double distanceInKm = taskerPlaceDistance / 1000;
       String formattedDistance = distanceInKm.toStringAsFixed(1);
 
-      Tasker currentTasker = fakeData.fakeTaskers[taskStateProvider.currentTaskerIndex];
+      Tasker currentTasker = fakeData.fakeTaskers[ref.read(taskStateProvider).currentTaskerIndex];
 
-      // Create the task using the retrieved locations and tasker area
-      tasksProvider.createTask(
+      // Create the task and return it
+      Task newTask = tasksNotifier.createTask(
         client: fakeData.fakeUser,
         tasker: currentTasker,
         userLocation: userLocation,
         taskerLocation: taskerLocation,
         date: DateTime.now(),
         time: TimeOfDay.now(),
-        taskWorkGroup: taskStateProvider.selectedTaskGroup!,
-        taskerArea: taskerArea, 
+        taskWorkGroup: ref.read(taskStateProvider).selectedTaskGroup!,
+        taskerArea: taskerArea,
         taskPlaceDistance: formattedDistance,
         taskFullAddress: taskFullAddress,
         taskDetails: '',
@@ -85,16 +83,23 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
         userArea: '',
         status: TaskStatus.accepted,
       );
+
+      setState(() {
+        isLoadingAccept = false;
+      });
+
+      // Pop the current screen and return the task instance
+      Navigator.pop(context, newTask);
+      
+      taskStateNotifier.setTaskState(TaskState.accepted);
+      return newTask;
     } catch (e) {
       logger.e("Failed to fetch tasker area: $e");
+      setState(() {
+        isLoadingAccept = false;
+      });
+      return null;
     }
-    // Stop loading after task creation
-    setState(() {
-      isLoadingAccept = false;
-    });
-    Navigator.pop(context);
-    // Set task state to accepted
-    context.read<TaskStateProvider>().setTaskState(TaskState.accepted);
   }
 
   void _handleRejectTask() async {
@@ -102,28 +107,26 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
       isLoadingReject = true;
     });
 
-    // Simulate a network request
     await Future.delayed(const Duration(seconds: 1));
 
-    final taskStateProvider = context.read<TaskStateProvider>();
-    final mapProvider = Provider.of<MapProvider>(context, listen: false);
+    final taskStateNotifier = ref.read(taskStateProvider.notifier);
+    final mapStateNotifier = ref.read(mapStateProvider.notifier);
 
     // Reset task and clear the map polylines
-    taskStateProvider.rejectTask();
-    mapProvider.clearPolylines();
+    taskStateNotifier.rejectTask();
+    mapStateNotifier.clearPolylines();
 
-    // Increment the tasker index, cycle through available taskers
     final fakeData = FakeData();
-    taskStateProvider.incrementTaskerIndex(fakeData.fakeTaskers.length);
+    taskStateNotifier.incrementTaskerIndex(fakeData.fakeTaskers.length);
 
     setState(() {
       isLoadingReject = false;
     });
 
     // Check whether the previous search was from the current position or an address
-    final bool searchFromCurrentPosition = taskStateProvider.searchFromCurrentPosition;
-    final LatLng? currentSearchLocation = taskStateProvider.currentSearchLocation;
-    final String? searchedAddress = taskStateProvider.searchedAddress;
+    final bool searchFromCurrentPosition = ref.read(taskStateProvider).searchFromCurrentPosition;
+    final LatLng? currentSearchLocation = ref.read(taskStateProvider).currentSearchLocation;
+    final String? searchedAddress = ref.read(taskStateProvider).searchedAddress;
     
     Navigator.pushReplacement(
       context,
@@ -139,7 +142,7 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final taskState = context.watch<TaskStateProvider>();
+    final taskState = ref.watch(taskStateProvider);
 
     return Scaffold(
       body: Stack(
@@ -169,7 +172,11 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     ElevatedButton.icon(
-                      onPressed: isLoadingAccept ? null : _handleAcceptTask,
+                      onPressed: isLoadingAccept
+                          ? null
+                          : () async {
+                              await _handleAcceptTask();
+                            },
                       icon: isLoadingAccept
                           ? const Padding(
                               padding: EdgeInsets.all(4.0),
@@ -399,49 +406,6 @@ class TaskerProfileScreenState extends State<TaskerProfileScreen> {
             ],
           ),
           SizedBox(height: 20.h),
-
-          // ElevatedButton.icon(
-          //   onPressed: () {
-          //     // Handle button press
-          //   },
-          //   icon: const Icon(Icons.flash_on, color: AppColors.black),
-          //   label: Text(
-          //     'Porosit për punë', 
-          //     style: TextStyle(
-          //       fontSize: 16.sp,
-          //       color: AppColors.black
-          //     )
-          //   ),
-          //   style: ElevatedButton.styleFrom(
-          //     backgroundColor: AppColors.tomatoRed,
-          //     minimumSize: Size(double.infinity, 40.h),
-          //     shape: RoundedRectangleBorder(
-          //       borderRadius: BorderRadius.circular(8.r),
-          //     ),
-          //   ),
-          // ),
-          // SizedBox(height: 8.h),
-          // OutlinedButton(
-          //   onPressed: () {
-          //     // Handle button press
-          //   },
-          //   style: OutlinedButton.styleFrom(
-          //     minimumSize: Size(double.infinity, 40.h),
-          //     side: const BorderSide(color: AppColors.grey700),
-          //     shape: RoundedRectangleBorder(
-          //       borderRadius: BorderRadius.circular(8.r),
-          //     ),
-          //   ),
-          //   child: Text(
-          //     'Kontaktoje', 
-          //     style: TextStyle(
-          //       fontSize: 16.sp,
-          //       color: AppColors.grey700
-          //     )
-          //   ),
-          // ),
-          // SizedBox(height: 8.h),
-
           OutlinedButton(
             onPressed: () {
               // Handle button press
