@@ -461,10 +461,9 @@ Widget build(BuildContext context) {
       if (taskState == TaskState.accepted) {
         taskStateNotifier.resetTask();
         mapStateNotifier.clearPolylines();
-        
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          MaterialPageRoute(builder: (context) => const HomeScreen(initialIndex: 1)),
           (Route<dynamic> route) => false,
         );
       } else if (taskState == TaskState.searching || taskState == TaskState.profileView) {

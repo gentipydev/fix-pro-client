@@ -214,7 +214,7 @@ class SearchSection extends ConsumerWidget {
                               alignment: Alignment.topCenter,
                               children: [
                                 Positioned(
-                                  bottom: -30.h, 
+                                  bottom: -25.h, 
                                   child: Material(
                                     color: Colors.transparent,
                                     shape: const CircleBorder(),

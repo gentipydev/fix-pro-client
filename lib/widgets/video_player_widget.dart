@@ -1,6 +1,7 @@
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoPlayerWidget extends StatefulWidget {
@@ -78,8 +79,9 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
               Center(
                 child: _controller.value.isInitialized
                 ? VideoPlayer(_controller)
-                : const CircularProgressIndicator(
+                : SpinKitCircle(
                     color: AppColors.tomatoRed,
+                    size: 50.w,
                   ),
               ),
               // Close button at the top-right corner of the video

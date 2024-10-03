@@ -1,6 +1,6 @@
 import 'package:fit_pro_client/models/task.dart';
 import 'package:fit_pro_client/providers/map_provider.dart';
-import 'package:fit_pro_client/screens/add_task_details_screen.dart';
+import 'package:fit_pro_client/screens/add_task_details_screen/add_task_details_screen.dart';
 import 'package:fit_pro_client/screens/tasker_profile_screen.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:fit_pro_client/widgets/custom_expandable_fab.dart';
@@ -13,9 +13,11 @@ import 'package:url_launcher/url_launcher.dart';
 
 class TaskDetailsScreen extends ConsumerStatefulWidget {
   final Task task;
+  final bool isCurrentTask;
 
   const TaskDetailsScreen({
     required this.task,
+    required this.isCurrentTask,
     super.key,
   });
 
@@ -96,8 +98,11 @@ class TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
 
 
   Future<void> _openGoogleMaps() async {
+    final double userLat = widget.task.userLocation.latitude;
+    final double userLng = widget.task.userLocation.longitude;
+
     final Uri url = Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=41.332733,19.855935');
+        'https://www.google.com/maps/search/?api=1&query=$userLat,$userLng');
     if (await canLaunchUrl(url)) {
       await launchUrl(url);
     } else {
@@ -106,8 +111,13 @@ class TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
   }
 
   Future<void> _navigateToLocation() async {
+    final double userLat = widget.task.userLocation.latitude;
+    final double userLng = widget.task.userLocation.longitude;
+    final double taskerLat = widget.task.taskerLocation.latitude;
+    final double taskerLng = widget.task.taskerLocation.longitude;
+
     final Uri url = Uri.parse(
-        'https://www.google.com/maps/dir/?api=1&destination=41.332733,19.855935&travelmode=driving');
+        'https://www.google.com/maps/dir/?api=1&origin=$userLat,$userLng&destination=$taskerLat,$taskerLng&travelmode=driving');
     if (await canLaunchUrl(url)) {
       await launchUrl(url);
     } else {
@@ -139,7 +149,8 @@ class TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Stack(children: [
+                Stack(
+                  children: [
                   SizedBox(
                     height: 220.h,
                     child: Consumer(
@@ -295,8 +306,8 @@ class TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                                   ],
                                 ),
                                 SizedBox(height: 20.h),
-                                TextButton(
-                                  onPressed: () {
+                                GestureDetector(
+                                  onTap: () {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
@@ -309,7 +320,7 @@ class TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                                     style: TextStyle(
                                       fontSize: 20.sp,
                                       color: AppColors.tomatoRed,
-                                      fontWeight: FontWeight.w500,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ),
@@ -332,11 +343,11 @@ class TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                       ),
                       SizedBox(height: 8.h),
                       Text(
-                        'Detaje',
+                        'Përshkrimi i punës',
                         style: TextStyle(fontSize: 16.sp),
                       ),
                       SizedBox(height: 4.h),
-                  widget.task.taskDetails != null && widget.task.taskDetails!.isNotEmpty
+                    widget.task.taskDetails != null && widget.task.taskDetails!.isNotEmpty
                     ? Text(
                         widget.task.taskDetails!,
                         style: TextStyle(
@@ -442,24 +453,36 @@ class TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                         ),
                       ),
                       SizedBox(height: 20.h),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => AddTaskDetails(task: widget.task),
-                            ),
-                          );
-                        },
-                        child: Text(
-                          'Shto detaje të tjera...',
-                          style: TextStyle(
-                            fontSize: 18.sp,
-                            color: AppColors.tomatoRed,
-                            fontWeight: FontWeight.w500,
+                      if (widget.isCurrentTask) 
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AddTaskDetails(task: widget.task),
+                              ),
+                            );
+                          },
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Shto detaje të tjera',
+                                style: TextStyle(
+                                  fontSize: 18.sp,
+                                  color: AppColors.tomatoRed,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              SizedBox(width: 4.w),
+                              Icon(
+                                Icons.chevron_right,
+                                color: AppColors.tomatoRed,
+                                size: 26.sp, 
+                              ),
+                            ],
                           ),
                         ),
-                      ),
                       SizedBox(height: 60.h),
                     ],
                   ),

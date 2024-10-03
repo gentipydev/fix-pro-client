@@ -1,6 +1,6 @@
 import 'package:fit_pro_client/models/task.dart';
 import 'package:fit_pro_client/models/tasker.dart';
-import 'package:fit_pro_client/screens/add_task_details_screen.dart';
+import 'package:fit_pro_client/screens/add_task_details_screen/add_task_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:fit_pro_client/providers/task_state_provider.dart';
 import 'package:fit_pro_client/screens/tasker_profile_screen.dart';
@@ -163,8 +163,8 @@ class ProfileContainerState extends ConsumerState<ProfileContainer> with TickerP
                                   begin: 1.0,
                                   end: 0.0,
                                 ).animate(_controller),
-                                child: TextButton(
-                                  onPressed: () async {
+                                child: GestureDetector(
+                                  onTap: () async {
                                     Task? acceptedTask = await Navigator.push(
                                       context,
                                       MaterialPageRoute(
@@ -186,7 +186,7 @@ class ProfileContainerState extends ConsumerState<ProfileContainer> with TickerP
                                     style: TextStyle(
                                       fontSize: 20.sp,
                                       color: AppColors.tomatoRed,
-                                      fontWeight: FontWeight.w500,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ),
@@ -202,8 +202,8 @@ class ProfileContainerState extends ConsumerState<ProfileContainer> with TickerP
                                   begin: 0.0,
                                   end: 1.0,
                                 ).animate(_controller),
-                                child: TextButton(
-                                  onPressed: () {
+                                child: GestureDetector(
+                                  onTap: () {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
@@ -218,7 +218,7 @@ class ProfileContainerState extends ConsumerState<ProfileContainer> with TickerP
                                     style: TextStyle(
                                       fontSize: 20.sp,
                                       color: AppColors.tomatoRed,
-                                      fontWeight: FontWeight.w500,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ),

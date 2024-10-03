@@ -14,14 +14,22 @@ import 'package:fit_pro_client/models/task_group.dart';
 import 'package:shimmer/shimmer.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key});
+  final int initialIndex;
+
+  const HomeScreen({super.key, this.initialIndex = 0});
 
   @override
   HomeScreenState createState() => HomeScreenState();
 }
 
 class HomeScreenState extends ConsumerState<HomeScreen> {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialIndex;
+  }
 
   final List<Widget> _pages = [
     const HomeContent(),
@@ -107,6 +115,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 }
+
 
 class HomeContent extends ConsumerStatefulWidget {
   const HomeContent({super.key});

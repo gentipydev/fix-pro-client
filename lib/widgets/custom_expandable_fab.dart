@@ -233,13 +233,6 @@ class ExpandableFabState extends ConsumerState<ExpandableFab> with SingleTickerP
                             taskerArea: taskerArea,
                             taskPlaceDistance: formattedDistance,
                             taskFullAddress: taskFullAddress,
-                            taskDetails: '',
-                            paymentMethod: '',
-                            promoCode: '',
-                            taskEvaluation: '',
-                            taskTools: [],
-                            taskExtraDetails: '',
-                            userArea: '',
                             status: TaskStatus.accepted,
                           );
 

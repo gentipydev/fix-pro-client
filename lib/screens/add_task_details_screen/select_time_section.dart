@@ -53,20 +53,17 @@ class SelectTimeState extends State<SelectTime> {
       firstDate: DateTime.now(),
       lastDate: DateTime(2101),
       builder: (BuildContext context, Widget? child) {
-        return Transform.scale(
-          scale: 0.9,
-          child: Theme(
-            data: ThemeData.light().copyWith(
-              colorScheme: const ColorScheme.light(
-                primary: AppColors.tomatoRed,
-                onPrimary: Colors.white,
-                surface: AppColors.white,
-                onSurface: AppColors.grey700,
-              ),
-              dialogBackgroundColor: Colors.white,
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.tomatoRed,
+              onPrimary: Colors.white,
+              surface: AppColors.white,
+              onSurface: AppColors.grey700,
             ),
-            child: child!,
+            dialogBackgroundColor: Colors.white,
           ),
+          child: child!,
         );
       },
     );
@@ -85,9 +82,7 @@ class SelectTimeState extends State<SelectTime> {
       context: context,
       initialTime: TimeOfDay.now(),
       builder: (BuildContext context, Widget? child) {
-        return Transform.scale(
-          scale: 0.8,
-          child: Theme(
+        return Theme(
             data: ThemeData.light().copyWith(
               colorScheme: const ColorScheme.light(
                 primary: AppColors.grey700,
@@ -104,7 +99,6 @@ class SelectTimeState extends State<SelectTime> {
               ),
             ),
             child: child!,
-          ),
         );
       },
     );
@@ -145,7 +139,7 @@ class SelectTimeState extends State<SelectTime> {
               ],
             ),
           ),
-        SizedBox(height: 10.h),
+        SizedBox(height: 20.h),
         // Date Selector
         GestureDetector(
           onTap: () => _selectDate(context),
@@ -172,7 +166,7 @@ class SelectTimeState extends State<SelectTime> {
             ],
           ),
         ),
-        SizedBox(height: 20.h),
+        SizedBox(height: 30.h),
         // Time Selector
         GestureDetector(
           onTap: () => _selectTime(context),

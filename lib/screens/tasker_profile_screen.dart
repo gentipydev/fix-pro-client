@@ -74,13 +74,6 @@ class TaskerProfileScreenState extends ConsumerState<TaskerProfileScreen> {
         taskerArea: taskerArea,
         taskPlaceDistance: formattedDistance,
         taskFullAddress: taskFullAddress,
-        taskDetails: '',
-        paymentMethod: '',
-        promoCode: '',
-        taskEvaluation: '',
-        taskTools: [],
-        taskExtraDetails: '',
-        userArea: '',
         status: TaskStatus.accepted,
       );
 
@@ -368,8 +361,8 @@ class TaskerProfileScreenState extends ConsumerState<TaskerProfileScreen> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(8.r),
                 child: Image.asset(
-                  'assets/images/worker.jpg',
-                  height: 180.h,
+                  widget.tasker.profileImage,
+                  height: 120.h,
                   width: double.infinity,
                   fit: BoxFit.cover,
                 ),

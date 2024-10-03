@@ -5,15 +5,26 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class PaymentBottomSheet extends StatefulWidget {
   final Function(String) onPaymentMethodSelected;
+  final String? selectedMethod;
 
-  const PaymentBottomSheet({super.key, required this.onPaymentMethodSelected});
+  const PaymentBottomSheet({
+    super.key,
+    required this.onPaymentMethodSelected,
+    this.selectedMethod,
+  });
 
   @override
   PaymentBottomSheetState createState() => PaymentBottomSheetState();
 }
 
 class PaymentBottomSheetState extends State<PaymentBottomSheet> {
-  String? selectedMethod = 'PayPal';
+  String? selectedMethod;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedMethod = widget.selectedMethod ?? 'Cash';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,53 +49,25 @@ class PaymentBottomSheetState extends State<PaymentBottomSheet> {
           _buildPaymentMethod(
             icon: FontAwesomeIcons.paypal,
             methodName: 'PayPal',
-            isSelected: selectedMethod == 'PayPal',
-            onTap: () {
-              setState(() {
-                selectedMethod = 'PayPal';
-              });
-              widget.onPaymentMethodSelected('PayPal');
-              Navigator.pop(context);
-            },
+            method: 'PayPal',
           ),
           SizedBox(height: 20.h),
           _buildPaymentMethod(
-            icon: Icons.credit_card,
+            icon: FontAwesomeIcons.creditCard,
             methodName: 'Karta e Kreditit',
-            isSelected: selectedMethod == 'Karta e Kreditit',
-            onTap: () {
-              setState(() {
-                selectedMethod = 'Karta e Kreditit';
-              });
-              widget.onPaymentMethodSelected('Karta e Kreditit');
-              Navigator.pop(context);
-            },
+            method: 'Karta e Kreditit',
           ),
           SizedBox(height: 20.h),
           _buildPaymentMethod(
             icon: FontAwesomeIcons.moneyCheckDollar,
-            methodName: 'IBAN (Transfertë Bankare)',
-            isSelected: selectedMethod == 'IBAN (Transfertë Bankare)',
-            onTap: () {
-              setState(() {
-                selectedMethod = 'IBAN (Transfertë Bankare)';
-              });
-              widget.onPaymentMethodSelected('Transfertë Bankare');
-              Navigator.pop(context);
-            },
+            methodName: 'Transfertë Bankare',
+            method: 'Transfertë Bankare',
           ),
           SizedBox(height: 20.h),
           _buildPaymentMethod(
             icon: FontAwesomeIcons.moneyBillWave,
             methodName: 'Cash',
-            isSelected: selectedMethod == 'Cash',
-            onTap: () {
-              setState(() {
-                selectedMethod = 'Cash';
-              });
-              widget.onPaymentMethodSelected('Cash');
-              Navigator.pop(context);
-            },
+            method: 'Cash',
           ),
           SizedBox(height: 40.h),
         ],
@@ -95,11 +78,10 @@ class PaymentBottomSheetState extends State<PaymentBottomSheet> {
   Widget _buildPaymentMethod({
     required IconData icon,
     required String methodName,
-    required bool isSelected,
-    required Function() onTap,
+    required String method,
   }) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () => _selectPaymentMethod(method),
       child: Card(
         elevation: 4.0,
         shape: RoundedRectangleBorder(
@@ -115,16 +97,24 @@ class PaymentBottomSheetState extends State<PaymentBottomSheet> {
                 methodName,
                 style: TextStyle(
                   fontSize: 16.sp,
-                  fontWeight: FontWeight.bold,
+                  color: AppColors.grey700,
                 ),
               ),
               const Spacer(),
-              if (isSelected)
+              if (selectedMethod == method)
                 Icon(Icons.check_circle, color: AppColors.tomatoRed, size: 24.w),
             ],
           ),
         ),
       ),
     );
+  }
+
+  void _selectPaymentMethod(String method) {
+    setState(() {
+      selectedMethod = method;
+    });
+    widget.onPaymentMethodSelected(method);
+    Navigator.pop(context);
   }
 }

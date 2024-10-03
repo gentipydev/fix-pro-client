@@ -6,7 +6,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fit_pro_client/screens/tasker_profile_screen.dart';
 import 'package:fit_pro_client/providers/taskers_provider.dart';  // Import Riverpod taskersProvider
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';  // Import Riverpod
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';  // Import Riverpod
 
 class FavouriteTaskersScreen extends ConsumerStatefulWidget {
   const FavouriteTaskersScreen({super.key});
@@ -167,7 +168,12 @@ class FavouriteTaskersScreenState extends ConsumerState<FavouriteTaskersScreen> 
           builder: (context, ref, child) {
             final taskersState = ref.watch(taskersProvider);
             if (taskersState.isLoading) {
-              return const Center(child: CircularProgressIndicator(color: AppColors.tomatoRed,));
+              return Center(
+                child: SpinKitCircle(
+                    color: AppColors.tomatoRed,
+                    size: 50.w,
+                  ),
+              );
             }
             if (taskersState.errorMessage != null) {
               return Center(child: Text('Error: ${taskersState.errorMessage}'));

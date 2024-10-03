@@ -4,6 +4,7 @@ import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:logger/logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fit_pro_client/providers/tasks_provider.dart';
@@ -179,8 +180,11 @@ class TasksScreenState extends ConsumerState<TasksScreen> with SingleTickerProvi
           ),
         ),
         body: tasksState.isLoading
-            ? const Center(
-                child: CircularProgressIndicator(color: AppColors.tomatoRed),
+            ? Center(
+                child: SpinKitCircle(
+                    color: AppColors.tomatoRed,
+                    size: 50.w,
+                  ),
               )
             : TabBarView(
                 controller: _tabController,
@@ -215,7 +219,7 @@ class TasksScreenState extends ConsumerState<TasksScreen> with SingleTickerProvi
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => TaskDetailsScreen(task: task),
+                                          builder: (context) => TaskDetailsScreen(task: task, isCurrentTask: true),
                                         ),
                                       );
                                     },
@@ -274,7 +278,7 @@ class TasksScreenState extends ConsumerState<TasksScreen> with SingleTickerProvi
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => TaskDetailsScreen(task: task),
+                                          builder: (context) => TaskDetailsScreen(task: task, isCurrentTask: false),
                                         ),
                                       );
                                     },

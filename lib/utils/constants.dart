@@ -12,5 +12,6 @@ class AppColors {
   static const tomatoRed = Color(0xffFF6347);
   static const tomatoRedLight = Color(0xffFF826A);
   static const tomatoRedLighter = Color(0xffffb3a7);
+  static const mintGreen = Color(0xFF66B38D);
 }
 
