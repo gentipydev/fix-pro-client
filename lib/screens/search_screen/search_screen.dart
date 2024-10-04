@@ -158,7 +158,6 @@ class SearchScreenState extends ConsumerState<SearchScreen> with TickerProviderS
 
     // Proceed with the next steps if the target location is available
     if (targetLocation != null) {
-      taskStateNotifier.setLocationSelected(true);
       taskStateNotifier.setTaskState(TaskState.searching);
 
       // Update the UI immediately with search status
@@ -176,7 +175,7 @@ class SearchScreenState extends ConsumerState<SearchScreen> with TickerProviderS
       taskStateNotifier.setTaskerLocation(fakeTaskerLocation);
 
         // Delete the current location marker
-        Future.delayed(const Duration(seconds: 3)).then((_) {
+        Future.delayed(const Duration(seconds: 8)).then((_) {
         if (mounted) {
           setState(() {
             markers.clear();
@@ -481,6 +480,7 @@ Widget build(BuildContext context) {
                 final mapStateNotifier = ref.read(mapStateProvider.notifier);
 
                 return GoogleMap(
+                  padding: const EdgeInsets.only(bottom: 20),
                   initialCameraPosition: CameraPosition(
                     target: currentLocation ?? const LatLng(41.3275, 19.8189),
                     zoom: 15.5,

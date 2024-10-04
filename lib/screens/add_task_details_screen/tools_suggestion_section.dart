@@ -81,6 +81,10 @@ class _ToolSuggestionSectionState extends State<ToolSuggestionSection> {
             ),
             tilePadding: EdgeInsets.zero,
             iconColor: AppColors.tomatoRed,
+            trailing: Icon(
+              Icons.expand_more,
+              size: 36.sp
+            ),
             children: [
               if (widget.task.taskTools != null && widget.task.taskTools!.isNotEmpty)
                 Padding(
@@ -97,7 +101,6 @@ class _ToolSuggestionSectionState extends State<ToolSuggestionSection> {
                             fontSize: 12,
                           ),
                         ),
-                        labelPadding: EdgeInsets.zero,
                         backgroundColor: AppColors.tomatoRedLighter,
                         deleteIcon: const Icon(Icons.close, size: 20),
                         onDeleted: () {

@@ -1,3 +1,4 @@
+import 'package:fit_pro_client/models/task.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -5,15 +6,11 @@ import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 
 class SelectTime extends StatefulWidget {
-  final DateTime? initialtaskerDate;
-  final TimeOfDay? initialtaskerTime;
-  final bool initialUsetaskerTime;
+  final Task task;
 
   const SelectTime({
     super.key,
-    this.initialtaskerDate,
-    this.initialtaskerTime,
-    this.initialUsetaskerTime = true,
+    required this.task,
   });
 
   @override
@@ -32,12 +29,15 @@ class SelectTimeState extends State<SelectTime> {
   void initState() {
     super.initState();
 
-    taskerDate = widget.initialtaskerDate ?? DateTime.parse("2025-08-27");
+    // Set initial taskerDate and taskerTime, 1 day after the task creation
+    widget.task.scheduledDate = widget.task.date.add(const Duration(days: 1));
+    widget.task.scheduledTime = widget.task.time;
 
-    taskerTime = widget.initialtaskerTime ?? const TimeOfDay(hour: 11, minute: 0);
+    // Initialize taskerDate and taskerTime from scheduled values
+    taskerDate = widget.task.scheduledDate;
+    taskerTime = widget.task.scheduledTime;
 
-    usetaskerTime = widget.initialUsetaskerTime;
-
+    // Set the selected values if usetaskerTime is true
     if (usetaskerTime) {
       _selectedDate = taskerDate;
       _selectedTime = taskerTime;
@@ -71,6 +71,7 @@ class SelectTimeState extends State<SelectTime> {
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
+        widget.task.scheduledDate = _selectedDate; // Update the task's scheduled date
       });
     }
   }
@@ -83,22 +84,22 @@ class SelectTimeState extends State<SelectTime> {
       initialTime: TimeOfDay.now(),
       builder: (BuildContext context, Widget? child) {
         return Theme(
-            data: ThemeData.light().copyWith(
-              colorScheme: const ColorScheme.light(
-                primary: AppColors.grey700,
-                onPrimary: AppColors.white,
-                surface: AppColors.white,
-                onSurface: AppColors.grey700,
-              ),
-              timePickerTheme: const TimePickerThemeData(
-                dialHandColor: AppColors.tomatoRed,
-                hourMinuteTextColor: AppColors.tomatoRed,
-              ),
-              buttonTheme: const ButtonThemeData(
-                textTheme: ButtonTextTheme.primary,
-              ),
+          data: ThemeData.light().copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.grey700,
+              onPrimary: AppColors.white,
+              surface: AppColors.white,
+              onSurface: AppColors.grey700,
             ),
-            child: child!,
+            timePickerTheme: const TimePickerThemeData(
+              dialHandColor: AppColors.tomatoRed,
+              hourMinuteTextColor: AppColors.tomatoRed,
+            ),
+            buttonTheme: const ButtonThemeData(
+              textTheme: ButtonTextTheme.primary,
+            ),
+          ),
+          child: child!,
         );
       },
     );
@@ -106,6 +107,7 @@ class SelectTimeState extends State<SelectTime> {
     if (picked != null && picked != _selectedTime) {
       setState(() {
         _selectedTime = picked;
+        widget.task.scheduledTime = _selectedTime; // Update the task's scheduled time
       });
     }
   }
@@ -117,14 +119,14 @@ class SelectTimeState extends State<SelectTime> {
       mainAxisAlignment: MainAxisAlignment.start,
       children: <Widget>[
         // Info text visible only if using tasker time
-        if (usetaskerTime) 
+        if (usetaskerTime)
           Padding(
             padding: EdgeInsets.symmetric(vertical: 10.h),
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Icon(
-                  Icons.info, 
+                  Icons.info,
                   size: 20,
                   color: AppColors.tomatoRed,
                 ),
@@ -140,6 +142,7 @@ class SelectTimeState extends State<SelectTime> {
             ),
           ),
         SizedBox(height: 20.h),
+
         // Date Selector
         GestureDetector(
           onTap: () => _selectDate(context),
@@ -147,9 +150,9 @@ class SelectTimeState extends State<SelectTime> {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               const Icon(
-                Icons.calendar_today, 
+                Icons.calendar_today,
                 color: AppColors.grey700,
-                size: 20
+                size: 20,
               ),
               SizedBox(width: 8.w),
               Text(
@@ -158,15 +161,13 @@ class SelectTimeState extends State<SelectTime> {
                     : (_selectedDate != null
                         ? DateFormat.yMMMMEEEEd('sq').format(_selectedDate!)
                         : 'Zgjidhni datën'),
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  color: AppColors.grey700
-                ),
+                style: TextStyle(fontSize: 16.sp, color: AppColors.grey700),
               ),
             ],
           ),
         ),
         SizedBox(height: 30.h),
+
         // Time Selector
         GestureDetector(
           onTap: () => _selectTime(context),
@@ -174,9 +175,9 @@ class SelectTimeState extends State<SelectTime> {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               const Icon(
-                Icons.access_time, 
+                Icons.access_time,
                 color: AppColors.grey700,
-                size: 20
+                size: 20,
               ),
               SizedBox(width: 8.w),
               Text(
@@ -185,23 +186,26 @@ class SelectTimeState extends State<SelectTime> {
                     : (_selectedTime != null
                         ? _selectedTime!.format(context)
                         : 'Zgjidhni orën'),
-                  style: TextStyle(
-                  fontSize: 16.sp,
-                  color: AppColors.grey700
-                ),
+                style: TextStyle(fontSize: 16.sp, color: AppColors.grey700),
               ),
             ],
           ),
         ),
         SizedBox(height: 20.h),
+
+        // Toggle between tasker's time and custom time
         TextButton(
           onPressed: () {
             setState(() {
-              usetaskerTime = !usetaskerTime; 
+              usetaskerTime = !usetaskerTime;
               if (usetaskerTime) {
+                // Revert to tasker's time
                 _selectedDate = taskerDate;
                 _selectedTime = taskerTime;
+                widget.task.scheduledDate = taskerDate;
+                widget.task.scheduledTime = taskerTime;
               } else {
+                // Clear selected date and time
                 _selectedDate = null;
                 _selectedTime = null;
               }
@@ -211,16 +215,12 @@ class SelectTimeState extends State<SelectTime> {
             overlayColor: WidgetStateProperty.all(Colors.transparent),
           ),
           child: Text(
-            usetaskerTime ? 'Propozoni kohën tuaj të punës' : 'Rikthehu tek disponibiliteti i profesionistit',
-            style: usetaskerTime 
-              ? TextStyle(
-                  fontSize: 16.sp,
-                  color: AppColors.tomatoRed,
-                )
-              : TextStyle(
-                  fontSize: 16.sp,
-                  color: AppColors.grey500,
-                ),
+            usetaskerTime
+                ? 'Propozoni kohën tuaj të punës'
+                : 'Rikthehu tek disponibiliteti i profesionistit',
+            style: usetaskerTime
+                ? TextStyle(fontSize: 16.sp, color: AppColors.tomatoRed)
+                : TextStyle(fontSize: 16.sp, color: AppColors.grey500),
           ),
         ),
       ],

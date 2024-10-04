@@ -72,9 +72,26 @@ class TaskersNotifier extends StateNotifier<TaskersState> {
   // Update tasker's favorite status
   void updateTaskerFavoriteStatus(String taskerId, bool isFavorite) async {
     try {
+      // Call the service to update the favorite status (optional, if you want to simulate a server update)
       _taskersService.updateTaskerFavoriteStatus(taskerId, isFavorite);
-      
-      await fetchTaskers();  // Re-fetch taskers to reflect the updated favorite status
+
+      // Update the tasker in the local state
+      final updatedTaskers = state.allTaskers.map((tasker) {
+        if (tasker.id == taskerId) {
+          // Return a new tasker with the updated favorite status
+          return tasker.copyWith(isFavorite: isFavorite);
+        }
+        return tasker;
+      }).toList();
+
+      // Update the favorite taskers list
+      final updatedFavoriteTaskers = updatedTaskers.where((tasker) => tasker.isFavorite).toList();
+
+      // Update the state with the new taskers and favorite taskers
+      state = state.copyWith(
+        allTaskers: updatedTaskers,
+        favoriteTaskers: updatedFavoriteTaskers,
+      );
     } catch (e) {
       state = state.copyWith(
         errorMessage: 'Failed to update tasker favorite status: $e',

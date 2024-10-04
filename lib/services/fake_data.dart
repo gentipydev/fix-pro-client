@@ -269,7 +269,7 @@ class FakeData {
         profileImage: "assets/images/client3.png",
         mapProfileImage: "assets/images/tasker3.png",
         contactInfo: "+355696443833",
-        isFavorite: true,
+        isFavorite: false,
         rating: 5,
         videoPresentationUrl: "https://example.com/video1",
         reviews: [fakeReviews[0], fakeReviews[1], fakeReviews[2]],

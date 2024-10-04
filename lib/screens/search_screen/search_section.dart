@@ -81,172 +81,183 @@ class SearchSection extends ConsumerWidget {
             SizedBox(height: 20.h),
 
             // Location input container sliding up
-            AnimatedOpacity(
-              duration: const Duration(milliseconds: 500),
-              opacity: taskState.isLocationSelected ? 0 : 1,
-              child: taskState.isLocationSelected
-                  ? const SizedBox()
-                  : Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10.w),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12.r),
-                        gradient: const LinearGradient(
-                          colors: [AppColors.white, AppColors.grey100],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 10,
-                            spreadRadius: 5,
+            AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              child: taskState.taskState == TaskState.initial
+                  ? AnimatedOpacity(
+                      duration: const Duration(milliseconds: 500),
+                      opacity: 1,
+                      curve: Curves.easeInOut,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10.w),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12.r),
+                          gradient: const LinearGradient(
+                            colors: [AppColors.white, AppColors.grey100],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
                           ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          // Search Input Field
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16.w),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.location_on,
-                                  color: AppColors.tomatoRed,
-                                  size: 24.sp,
-                                ),
-                                Expanded(
-                                  child: TextField(
-                                    controller: searchController,
-                                    cursorColor: AppColors.grey700,
-                                    style: TextStyle(fontSize: 16.sp),
-                                    decoration: InputDecoration(
-                                      hintText: 'Kërkoni një vendodhje tjetër...',
-                                      hintStyle: TextStyle(
-                                        color: AppColors.grey300,
-                                        fontSize: 16.sp,
-                                      ),
-                                      contentPadding: EdgeInsets.symmetric(horizontal: 16.w),
-                                      border: InputBorder.none,
-                                    ),
-                                    onChanged: (value) {
-                                      onSearch(value);
-                                    },
-                                    onSubmitted: (value) {
-                                      onSearch(value);
-                                    },
-                                  ),
-                                ),
-                              ],
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              spreadRadius: 5,
                             ),
-                          ),
-                          SizedBox(height: 10.h),
-
-                          // Display filtered suggestions
-                          if (filteredAddresses.isNotEmpty)
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            // Search Input Field
                             Padding(
                               padding: EdgeInsets.symmetric(horizontal: 16.w),
-                              child: SizedBox(
-                                height: 200.h,
-                                child: ListView.separated(
-                                  itemCount: filteredAddresses.length,
-                                  itemBuilder: (context, index) {
-                                    final suggestion = filteredAddresses[index];
-                                    return ListTile(
-                                      title: Text(
-                                        suggestion,
-                                        style: TextStyle(
-                                          fontSize: 15.sp,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.location_on,
+                                    color: AppColors.tomatoRed,
+                                    size: 24.sp,
+                                  ),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: searchController,
+                                      cursorColor: AppColors.grey700,
+                                      style: TextStyle(fontSize: 16.sp),
+                                      decoration: InputDecoration(
+                                        hintText: 'Kërkoni një vendodhje tjetër...',
+                                        hintStyle: TextStyle(
+                                          color: AppColors.grey300,
+                                          fontSize: 16.sp,
                                         ),
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 16.w),
+                                        border: InputBorder.none,
                                       ),
-                                      onTap: () {
-                                        onSelectLocation(suggestion);
+                                      onChanged: (value) {
+                                        onSearch(value);
                                       },
-                                      contentPadding: EdgeInsets.symmetric(horizontal: 10.w),
-                                      dense: true,
-                                      visualDensity: VisualDensity.compact,
-                                    );
-                                  },
-                                  separatorBuilder: (context, index) {
-                                    return const Divider(
-                                      color: AppColors.grey100,
-                                      thickness: 1.0,
-                                      height: 1.0,
-                                    );
-                                  },
-                                ),
+                                      onSubmitted: (value) {
+                                        onSearch(value);
+                                      },
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                        ],
-                      ),
-                    ),
-            ),
-            SizedBox(height: 20.h),
-            
-            // Use current location button sliding up
-            AnimatedOpacity(
-              duration: const Duration(milliseconds: 500),
-              opacity: taskState.isLocationSelected ? 0 : 1,
-              child: taskState.isLocationSelected
-                  ? const SizedBox()
-                  : GestureDetector(
-                      onTap: () {
-                        if (isAddressSelected) {
-                          performSearch(searchController.text);
-                        } else {
-                          useCurrentLocation();
-                        }
-                      },
-                      child: Column(
-                        children: [
-                          Text(
-                            'Përdor Vendodhjen Aktuale',
-                            style: GoogleFonts.roboto(
-                              color: AppColors.white,
-                              fontSize: 16.sp,
-                            ),
-                          ),
-                          SizedBox(height: 5.h),
-                          SizedBox(
-                            height: 45.h, 
-                            child: Stack(
-                              clipBehavior: Clip.none,
-                              alignment: Alignment.topCenter,
-                              children: [
-                                Positioned(
-                                  bottom: -25.h, 
-                                  child: Material(
-                                    color: Colors.transparent,
-                                    shape: const CircleBorder(),
-                                    elevation: 6,
-                                    child: Container(
-                                      width: 70.w,
-                                      height: 70.w,
-                                      decoration: BoxDecoration(
-                                        color: AppColors.white,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: AppColors.tomatoRed,
-                                          width: 4.w,
+                            SizedBox(height: 10.h),
+
+                            // Display filtered suggestions
+                            if (filteredAddresses.isNotEmpty)
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                                child: SizedBox(
+                                  height: 200.h,
+                                  child: ListView.separated(
+                                    itemCount: filteredAddresses.length,
+                                    itemBuilder: (context, index) {
+                                      final suggestion = filteredAddresses[index];
+                                      return ListTile(
+                                        title: Text(
+                                          suggestion,
+                                          style: TextStyle(
+                                            fontSize: 15.sp,
+                                          ),
                                         ),
-                                      ),
-                                      child: Center(
-                                        child: Icon(
-                                          FontAwesomeIcons.searchengin,
-                                          color: AppColors.tomatoRed,
-                                          size: 35.sp,
+                                        onTap: () {
+                                          onSelectLocation(suggestion);
+                                        },
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 10.w),
+                                        dense: true,
+                                        visualDensity: VisualDensity.compact,
+                                      );
+                                    },
+                                    separatorBuilder: (context, index) {
+                                      return const Divider(
+                                        color: AppColors.grey100,
+                                        thickness: 2.0,
+                                        height: 1.0,
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : const SizedBox(), // When task state is not initial, the widget collapses completely
+            ),
+
+            SizedBox(height: 20.h),
+
+            // Use current location button sliding up
+            AnimatedSize(
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOut,
+              child: taskState.taskState == TaskState.initial
+                  ? AnimatedOpacity(
+                      duration: const Duration(milliseconds: 500),
+                      opacity: 1,
+                      child: GestureDetector(
+                        onTap: () {
+                          if (isAddressSelected) {
+                            performSearch(searchController.text);
+                          } else {
+                            useCurrentLocation();
+                          }
+                        },
+                        child: Column(
+                          children: [
+                            Text(
+                              'Përdor Vendodhjen Aktuale',
+                              style: GoogleFonts.roboto(
+                                color: AppColors.white,
+                                fontSize: 16.sp,
+                              ),
+                            ),
+                            SizedBox(height: 5.h),
+                            SizedBox(
+                              height: 45.h,
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                alignment: Alignment.topCenter,
+                                children: [
+                                  Positioned(
+                                    bottom: -25.h,
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      shape: const CircleBorder(),
+                                      elevation: 6,
+                                      child: Container(
+                                        width: 70.w,
+                                        height: 70.w,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.white,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: AppColors.tomatoRed,
+                                            width: 4.w,
+                                          ),
+                                        ),
+                                        child: Center(
+                                          child: Icon(
+                                            FontAwesomeIcons.searchengin,
+                                            color: AppColors.tomatoRed,
+                                            size: 35.sp,
+                                          ),
                                         ),
                                       ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-            )
+                    )
+                  : const SizedBox(),
+            ),
+
           ],
         ),
       ),

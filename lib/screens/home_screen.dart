@@ -139,6 +139,18 @@ class _HomeContentState extends ConsumerState<HomeContent> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(taskGroupsProvider.notifier).loadTaskGroups();
     });
+
+    // Pre-cache images after loading task groups
+    Future.microtask(() async {
+      final taskGroupsState = ref.read(taskGroupsProvider);
+
+      // Wait for task groups to load before pre-caching
+      if (!taskGroupsState.isLoading && taskGroupsState.taskGroups.isNotEmpty) {
+        for (var taskGroup in taskGroupsState.taskGroups) {
+          await precacheImage(AssetImage(taskGroup.imagePath), context);
+        }
+      }
+    });
   }
 
   @override

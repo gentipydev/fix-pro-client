@@ -88,8 +88,6 @@ void showCancelDialog(BuildContext context, WidgetRef ref) {
                 onPressed: () {
                   ref.read(taskStateProvider.notifier).resetTask(); 
                   ref.read(mapStateProvider.notifier).clearPolylines();
-                  
-                  // Navigate to HomeScreen
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (context) => const HomeScreen()),

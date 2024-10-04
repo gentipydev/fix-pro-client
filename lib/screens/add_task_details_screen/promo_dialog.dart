@@ -76,9 +76,9 @@ class PromoDialogState extends State<PromoDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Fut kodin promocional',
+                'Fusni kodin promocional që keni marrë me sms',
                 style: TextStyle(
-                  fontSize: 20.sp,
+                  fontSize: 18.sp,
                   color: AppColors.grey700,
                 ),
               ),

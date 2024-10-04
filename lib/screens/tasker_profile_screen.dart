@@ -2,6 +2,7 @@ import 'package:fit_pro_client/models/task.dart';
 import 'package:fit_pro_client/models/tasker.dart';
 import 'package:fit_pro_client/providers/map_provider.dart';
 import 'package:fit_pro_client/providers/task_state_provider.dart';
+import 'package:fit_pro_client/providers/taskers_provider.dart';
 import 'package:fit_pro_client/providers/tasks_provider.dart';
 import 'package:fit_pro_client/screens/search_screen/search_screen.dart';
 import 'package:fit_pro_client/services/fake_data.dart';
@@ -27,6 +28,7 @@ class TaskerProfileScreenState extends ConsumerState<TaskerProfileScreen> {
   Logger logger = Logger();
   bool isLoadingAccept = false; 
   bool isLoadingReject = false; 
+  bool isLoadingAddFavorite = false; 
   bool _showAllReviews = false;
 
   Future<Task?> _handleAcceptTask() async {
@@ -131,6 +133,22 @@ class TaskerProfileScreenState extends ConsumerState<TaskerProfileScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleAddToFavorites() async {
+    setState(() {
+      isLoadingAddFavorite = true;
+    });
+
+    // Simulate waiting for 2 seconds
+    await Future.delayed(const Duration(seconds: 2));
+
+    // Use the provider to update the favorite status
+    ref.read(taskersProvider.notifier).updateTaskerFavoriteStatus(widget.tasker.id, true);
+
+    setState(() {
+      isLoadingAddFavorite = false;
+    });
   }
 
   @override
@@ -350,6 +368,9 @@ class TaskerProfileScreenState extends ConsumerState<TaskerProfileScreen> {
   }
 
   Widget _buildPresentationProfileSection() {
+    // Get the updated tasker object from the provider using the tasker's id
+    final tasker = ref.watch(taskersProvider).allTaskers.firstWhere((t) => t.id == widget.tasker.id);
+
     return Container(
       color: AppColors.grey100,
       padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 16.w),
@@ -361,7 +382,7 @@ class TaskerProfileScreenState extends ConsumerState<TaskerProfileScreen> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(8.r),
                 child: Image.asset(
-                  widget.tasker.profileImage,
+                  tasker.profileImage,
                   height: 120.h,
                   width: double.infinity,
                   fit: BoxFit.cover,
@@ -399,25 +420,48 @@ class TaskerProfileScreenState extends ConsumerState<TaskerProfileScreen> {
             ],
           ),
           SizedBox(height: 20.h),
-          OutlinedButton(
-            onPressed: () {
-              // Handle button press
-            },
-            style: OutlinedButton.styleFrom(
-              minimumSize: Size(double.infinity, 40.h),
-              side: const BorderSide(color: AppColors.grey700),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-            ),
-          child: Text(
-              'Shtoje tek të preferuarit', 
-              style: TextStyle(
-                fontSize: 16.sp,
-                color: AppColors.grey700
-              )
-            ),
-          ),
+
+          // Conditionally render the button or success message based on the tasker's favorite status
+          tasker.isFavorite
+              ? Row(
+                  children: [
+                    Icon(Icons.check_circle, color: AppColors.tomatoRed, size: 20.w),
+                    SizedBox(width: 8.w),
+                    Text(
+                      'Profesionisti ndodhet tek lista e të preferuarve',
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        color: AppColors.tomatoRed,
+                      ),
+                    ),
+                  ],
+                )
+              : OutlinedButton(
+                  onPressed: isLoadingAddFavorite ? null : _handleAddToFavorites,
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: Size(double.infinity, 40.h),
+                    side: const BorderSide(color: AppColors.grey700),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                  ),
+                  child: isLoadingAddFavorite
+                      ? const Padding(
+                          padding: EdgeInsets.all(4.0),
+                          child: SpinKitThreeBounce(
+                            color: AppColors.tomatoRed,
+                            size: 16.0,
+                          ),
+                        )
+                      : Text(
+                          'Shtoje tek të preferuarit',
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            color: AppColors.grey700,
+                          ),
+                        ),
+                ),
+
           SizedBox(height: 20.h),
           Row(
             children: [

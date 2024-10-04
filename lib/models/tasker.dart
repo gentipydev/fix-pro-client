@@ -82,4 +82,41 @@ class Tasker {
       'taskerArea': taskerArea,
     };
   }
+
+  // Add a copyWith method to make it easier to modify specific fields
+  Tasker copyWith({
+    String? id,
+    String? fullName,
+    String? profileImage,
+    String? mapProfileImage,
+    String? contactInfo,
+    bool? isFavorite,
+    double? rating,
+    String? videoPresentationUrl,
+    List<Review>? reviews,
+    List<TaskerSkill>? skills,
+    String? bio,
+    double? averagePrice,
+    Availability? availability,
+    int? totalNumberTasks,
+    String? taskerArea,
+  }) {
+    return Tasker(
+      id: id ?? this.id,
+      fullName: fullName ?? this.fullName,
+      profileImage: profileImage ?? this.profileImage,
+      mapProfileImage: mapProfileImage ?? this.mapProfileImage,
+      contactInfo: contactInfo ?? this.contactInfo,
+      isFavorite: isFavorite ?? this.isFavorite,
+      rating: rating ?? this.rating,
+      videoPresentationUrl: videoPresentationUrl ?? this.videoPresentationUrl,
+      reviews: reviews ?? this.reviews,
+      skills: skills ?? this.skills,
+      bio: bio ?? this.bio,
+      averagePrice: averagePrice ?? this.averagePrice,
+      availability: availability ?? this.availability,
+      totalNumberTasks: totalNumberTasks ?? this.totalNumberTasks,
+      taskerArea: taskerArea ?? this.taskerArea,
+    );
+  }
 }

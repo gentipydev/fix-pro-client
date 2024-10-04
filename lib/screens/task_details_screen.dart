@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -320,7 +321,7 @@ class TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                                     style: TextStyle(
                                       fontSize: 20.sp,
                                       color: AppColors.tomatoRed,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ),
@@ -374,17 +375,70 @@ class TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                           ),
                         ],
                       ),
+                      if (widget.isCurrentTask) 
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(height: 4.h),
+                            const Divider(color: AppColors.grey300, thickness: 0.5),
+                            Text(
+                              'Koha e punës',
+                              style: TextStyle(fontSize: 16.sp),
+                            ),
+                            SizedBox(height: 8.h),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.calendar_today, 
+                                  color: AppColors.grey700,
+                                  size: 20.sp,
+                                ),
+                                SizedBox(width: 4.w),
+                                Text(
+                                  DateFormat('MMMMEEEEd', 'sq').format(widget.task.scheduledDate!),
+                                  style: TextStyle(
+                                    fontSize: 16.sp,
+                                    color: AppColors.tomatoRed,
+                                  ),
+                                ),
+                                SizedBox(width: 40.w),
+                                Icon(
+                                  Icons.access_time, 
+                                  color: AppColors.grey700,
+                                  size: 20.sp,
+                                ),
+                                SizedBox(width: 4.w),
+                                Text(
+                                  widget.task.scheduledTime!.format(context),
+                                  style: TextStyle(
+                                    fontSize: 16.sp,
+                                    color: AppColors.tomatoRed,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       SizedBox(height: 4.h),
                       const Divider(color: AppColors.grey300, thickness: 0.5),
-                      Text(
-                        'Vlerësimi i punës',
-                        style: TextStyle(fontSize: 16.sp),
-                      ),
                       SizedBox(height: 4.h),
-                      Text(
-                        'Kjo pune vlerësohet sipas statistikave nga 1-2 orë',
-                        style: TextStyle(
-                            fontSize: 14.sp, color: AppColors.grey700),
+                    if (widget.task.paymentMethod != null) 
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Mënyra e pagesës',
+                            style: TextStyle(fontSize: 16.sp),
+                          ),
+                          SizedBox(height: 4.h),
+                          Text(
+                            widget.task.paymentMethod!,
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: AppColors.grey700,
+                            ),
+                          ),
+                        ],
                       ),
                       SizedBox(height: 4.h),
                       const Divider(color: AppColors.grey300, thickness: 0.5),
@@ -396,7 +450,7 @@ class TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                       SizedBox(height: 4.h),
                       widget.task.bringOwnTools 
                         ? Text(
-                            'Profesionisti duhet te sjellë veglat e veta',
+                            'Profesionisti sjell veglat e veta',
                             style: TextStyle(
                               fontSize: 14.sp,
                               color: AppColors.grey700,
@@ -442,7 +496,7 @@ class TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                       SizedBox(height: 4.h),
                       const Divider(color: AppColors.grey300, thickness: 0.5),
                       Text(
-                        'Adresa e plotë ku do të kryhet puna',
+                        'Adresa e plotë',
                         style: TextStyle(fontSize: 16.sp),
                       ),
                       SizedBox(height: 4.h),
@@ -471,7 +525,7 @@ class TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                                 style: TextStyle(
                                   fontSize: 18.sp,
                                   color: AppColors.tomatoRed,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                               SizedBox(width: 4.w),

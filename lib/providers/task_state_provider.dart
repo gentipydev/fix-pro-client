@@ -11,7 +11,6 @@ enum TaskState {
 
 class TaskStateData {
   final TaskState taskState;
-  final bool isLocationSelected;
   final LatLng? currentSearchLocation;
   final LatLng? taskerLocation;
   final String? searchedAddress;
@@ -21,7 +20,6 @@ class TaskStateData {
 
   TaskStateData({
     required this.taskState,
-    required this.isLocationSelected,
     required this.currentSearchLocation,
     required this.taskerLocation,
     required this.searchedAddress,
@@ -34,7 +32,6 @@ class TaskStateData {
   factory TaskStateData.initial() {
     return TaskStateData(
       taskState: TaskState.initial,
-      isLocationSelected: false,
       currentSearchLocation: null,
       taskerLocation: null,
       searchedAddress: null,
@@ -57,7 +54,6 @@ class TaskStateData {
   }) {
     return TaskStateData(
       taskState: taskState ?? this.taskState,
-      isLocationSelected: isLocationSelected ?? this.isLocationSelected,
       currentSearchLocation: currentSearchLocation ?? this.currentSearchLocation,
       taskerLocation: taskerLocation ?? this.taskerLocation,
       searchedAddress: searchedAddress ?? this.searchedAddress,
@@ -86,11 +82,6 @@ class TaskStateNotifier extends StateNotifier<TaskStateData> {
   // Update task state
   void setTaskState(TaskState taskState) {
     state = state.copyWith(taskState: taskState);
-  }
-
-  // Update location selection
-  void setLocationSelected(bool value) {
-    state = state.copyWith(isLocationSelected: value);
   }
 
   // Update search details
@@ -124,8 +115,7 @@ class TaskStateNotifier extends StateNotifier<TaskStateData> {
   // Reject task and reset the state
   void rejectTask() {
     state = state.copyWith(
-      taskState: TaskState.initial,
-      isLocationSelected: false,
+      taskState: TaskState.searching,
     );
   }
 }

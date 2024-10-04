@@ -115,7 +115,7 @@ class _AddTaskDetailsState extends ConsumerState<AddTaskDetails> {
               ),
             ),
             SizedBox(height: 20.h),
-            const SelectTime(),
+            SelectTime(task: widget.task),
             Divider(color: AppColors.grey300, thickness: 1.w),
 
             PaymentSection(task: widget.task),
@@ -128,7 +128,7 @@ class _AddTaskDetailsState extends ConsumerState<AddTaskDetails> {
             SizedBox(height: 10.h),
 
             ToolSuggestionSection(task: widget.task),
-            SizedBox(height: 80.h),
+            SizedBox(height: 100.h),
 
           ],
         ),

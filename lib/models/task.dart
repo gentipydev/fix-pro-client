@@ -21,12 +21,16 @@ class Task {
   final TaskGroup taskWorkGroup;
   final DateTime date;
   final TimeOfDay time;
+
+  DateTime? scheduledDate;
+  TimeOfDay? scheduledTime;
+
   final String? taskerArea;
   final String? taskPlaceDistance;
   final String? userArea;
   final String? taskFullAddress;
   List<String>? taskTools;
-  String? paymentMethod; 
+  String? paymentMethod;
   String? promoCode;
   String? taskDetails;
   String? taskEvaluation;
@@ -48,6 +52,8 @@ class Task {
     required this.taskWorkGroup,
     required this.date,
     required this.time,
+    this.scheduledDate,
+    this.scheduledTime,
     this.taskerArea,
     this.taskPlaceDistance,
     this.userArea,
@@ -66,34 +72,43 @@ class Task {
   factory Task.fromJson(Map<String, dynamic> json) {
     return Task(
       id: json['id'],
-      
+
       // Deserialize client and tasker as User and Tasker models
       client: User.fromJson(json['client']),
       tasker: Tasker.fromJson(json['tasker']),
-      
+
       userLocation: LatLng(json['userLocation']['latitude'], json['userLocation']['longitude']),
       taskerLocation: LatLng(json['taskerLocation']['latitude'], json['taskerLocation']['longitude']),
       polylineCoordinates: (json['polylineCoordinates'] as List)
           .map((coordinate) => LatLng(coordinate['latitude'], coordinate['longitude']))
           .toList(),
-      
+
       bounds: json['bounds'] != null
-        ? LatLngBounds(
-            southwest: LatLng(json['bounds']['southwest']['latitude'], json['bounds']['southwest']['longitude']),
-            northeast: LatLng(json['bounds']['northeast']['latitude'], json['bounds']['northeast']['longitude']),
-          )
-        : null,
+          ? LatLngBounds(
+              southwest: LatLng(json['bounds']['southwest']['latitude'], json['bounds']['southwest']['longitude']),
+              northeast: LatLng(json['bounds']['northeast']['latitude'], json['bounds']['northeast']['longitude']),
+            )
+          : null,
 
       taskWorkGroup: TaskGroup.fromJson(json['taskWorkGroup']),
       date: DateTime.parse(json['date']),
-      
-      // Deserialize TimeOfDay
+
+      // Deserialize TimeOfDay for task creation time
       time: TimeOfDay(
         hour: int.parse(json['time'].split(':')[0]),
         minute: int.parse(json['time'].split(':')[1]),
       ),
-      
-      taskerArea: json['taskArea'],
+
+      // Deserialize scheduledDate and scheduledTime for when the task is to be accomplished
+      scheduledDate: json['scheduledDate'] != null ? DateTime.parse(json['scheduledDate']) : null,
+      scheduledTime: json['scheduledTime'] != null
+          ? TimeOfDay(
+              hour: int.parse(json['scheduledTime'].split(':')[0]),
+              minute: int.parse(json['scheduledTime'].split(':')[1]),
+            )
+          : null,
+
+      taskerArea: json['taskerArea'],
       taskPlaceDistance: json['taskPlaceDistance'],
       userArea: json['userArea'],
       taskTools: (json['taskTools'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
@@ -112,29 +127,35 @@ class Task {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      
+
       'client': client.toJson(),
       'tasker': tasker.toJson(),
-      
+
       'userLocation': {'latitude': userLocation.latitude, 'longitude': userLocation.longitude},
       'taskerLocation': {'latitude': taskerLocation.latitude, 'longitude': taskerLocation.longitude},
       'polylineCoordinates': polylineCoordinates
           .map((coordinate) => {'latitude': coordinate.latitude, 'longitude': coordinate.longitude})
           .toList(),
-      
+
       // Only serialize bounds if it is not null
-      if (bounds != null) 'bounds': {
-        'southwest': {'latitude': bounds!.southwest.latitude, 'longitude': bounds!.southwest.longitude},
-        'northeast': {'latitude': bounds!.northeast.latitude, 'longitude': bounds!.northeast.longitude},
-      },
-      
+      if (bounds != null)
+        'bounds': {
+          'southwest': {'latitude': bounds!.southwest.latitude, 'longitude': bounds!.southwest.longitude},
+          'northeast': {'latitude': bounds!.northeast.latitude, 'longitude': bounds!.northeast.longitude},
+        },
+
       'taskWorkGroup': taskWorkGroup.toJson(),
       'date': date.toIso8601String(),
-      
-      // Serialize TimeOfDay as a string in "HH:mm" format
+
+      // Serialize TimeOfDay for task creation time
       'time': '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
 
-      'taskArea': taskerArea,
+      // Serialize scheduledDate and scheduledTime if they are not null
+      if (scheduledDate != null) 'scheduledDate': scheduledDate!.toIso8601String(),
+      if (scheduledTime != null)
+        'scheduledTime': '${scheduledTime!.hour.toString().padLeft(2, '0')}:${scheduledTime!.minute.toString().padLeft(2, '0')}',
+
+      'taskerArea': taskerArea,
       'taskPlaceDistance': taskPlaceDistance,
       'userArea': userArea,
       'taskTools': taskTools,

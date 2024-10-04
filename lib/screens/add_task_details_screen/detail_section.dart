@@ -114,6 +114,10 @@ class DetailsSectionState extends State<DetailsSection> {
             // ExpansionTile for suggestions
             ExpansionTile(
               iconColor: AppColors.tomatoRed,
+              trailing: Icon(
+                Icons.expand_more,
+                size: 36.sp
+              ),
               title: Text(
                 'Shiko sugjerimet',
                 style: TextStyle(
