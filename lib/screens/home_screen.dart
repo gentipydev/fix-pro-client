@@ -35,7 +35,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     const HomeContent(),
     const TasksScreen(),
     const FavouriteTaskersScreen(),
-    const UserProfileScreen(),
+    const ProfileScreen(),
   ];
 
   void _onItemTapped(int index) {

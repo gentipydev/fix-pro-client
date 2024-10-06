@@ -218,18 +218,78 @@ class FakeData {
     }).toList();
   }
 
-  final User fakeUser = User(
+  User fakeUser = User(
     id: "1",
     fullName: "Alexa Burgaj",
     profileImage: "assets/images/client4.png",
     contactInfo: "+355696443833",
+    email: "alexa.burgaj@example.com",
+    phoneNumber: "+355696443833",
+    location: "Tirana, Albania",
+    dateOfBirth: DateTime(1995, 05, 21),
+    notificationPreferences: {
+      "email": true,
+      "sms": false,
+      "pushNotifications": true,
+    },
+    paymentMethods: ["PayPal", "Credit Card"],
+    taskHistory: ["task1", "task2", "task3"],
+    createdAt: DateTime.now(),
   );
+
+  void updateFakeUser(Map<String, dynamic> userData) {
+
+  if (userData.containsKey('fullName')) {
+    fakeUser = fakeUser.copyWith(fullName: userData['fullName'] as String);
+  }
+
+  if (userData.containsKey('profileImage')) {
+    fakeUser = fakeUser.copyWith(profileImage: userData['profileImage'] as String);
+  }
+
+  if (userData.containsKey('contactInfo')) {
+    fakeUser = fakeUser.copyWith(contactInfo: userData['contactInfo'] as String);
+  }
+
+  if (userData.containsKey('email')) {
+    fakeUser = fakeUser.copyWith(email: userData['email'] as String);
+  }
+
+  if (userData.containsKey('phoneNumber')) {
+    fakeUser = fakeUser.copyWith(phoneNumber: userData['phoneNumber'] as String);
+  }
+
+  if (userData.containsKey('location')) {
+    fakeUser = fakeUser.copyWith(location: userData['location'] as String?);
+  }
+
+  if (userData.containsKey('dateOfBirth')) {
+    fakeUser = fakeUser.copyWith(dateOfBirth: DateTime.tryParse(userData['dateOfBirth'] as String));
+  }
+
+  if (userData.containsKey('notificationPreferences')) {
+    fakeUser = fakeUser.copyWith(
+      notificationPreferences: Map<String, bool>.from(userData['notificationPreferences']),
+    );
+  }
+
+  if (userData.containsKey('paymentMethods')) {
+    fakeUser = fakeUser.copyWith(paymentMethods: List<String>.from(userData['paymentMethods']));
+  }
+
+  if (userData.containsKey('taskHistory')) {
+    fakeUser = fakeUser.copyWith(taskHistory: List<String>.from(userData['taskHistory']));
+  }
+
+  if (userData.containsKey('createdAt')) {
+    fakeUser = fakeUser.copyWith(createdAt: DateTime.tryParse(userData['createdAt'] as String));
+  }
+}
 
   late final List<Tasker> fakeTaskers;
   late final List<Review> fakeReviews;
   late final List<Task> fakeTasks;
 
-  // Constructor to initialize fakeTaskers after fakeTaskGroups are available
   FakeData() {
 
     fakeReviews = [

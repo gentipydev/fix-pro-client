@@ -27,7 +27,6 @@ class UserStatisticsScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             UserKeyMetricsOverview(),
-            UserTaskPerformance(),
             SpendingAndFavoriteTaskers(),
           ],
         ),
@@ -70,8 +69,8 @@ class UserKeyMetricsOverview extends StatelessWidget {
             children: [
               _buildKeyMetricCard('5', 'Punët e kërkuara', ''),
               _buildKeyMetricCard('3', 'Punët e përfunduara', ''),
-              _buildKeyMetricCard('80%', 'Norna e përfundimit të punëve', 'Syno for 100%'),
-              _buildKeyMetricCard('Lek 12,000', 'Totali i shpenzuar', ''),
+              _buildKeyMetricCard('60%', 'Norma e përfundimit të punëve', 'Syno for 100%'),
+              _buildKeyMetricCard('3', 'Punët e anulluara', ''),
             ],
           ),
         ],
@@ -108,63 +107,6 @@ class UserKeyMetricsOverview extends StatelessWidget {
   }
 }
 
-class UserTaskPerformance extends StatelessWidget {
-  const UserTaskPerformance({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.white,
-      padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Performanca e punëve',
-            style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8.h),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 16.h,
-            crossAxisSpacing: 16.w,
-            children: [
-              _buildPerformanceMetricCard('10', 'Totali i punëve te postuara'),
-              _buildPerformanceMetricCard('7', 'Totali i punëve të përfunduara'),
-              _buildPerformanceMetricCard('70%', 'Norma e përfundimit të punëve'),
-              _buildPerformanceMetricCard('3', 'Punët e anulluara'),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPerformanceMetricCard(String value, String label) {
-    return Card(
-      elevation: 4.0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.0),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              value,
-              style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 4.h),
-            Text(label, style: TextStyle(fontSize: 16.sp, color: AppColors.grey700)),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class SpendingAndFavoriteTaskers extends StatefulWidget {
   const SpendingAndFavoriteTaskers({super.key});

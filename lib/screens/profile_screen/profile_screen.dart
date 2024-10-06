@@ -1,12 +1,18 @@
 import 'package:fit_pro_client/screens/invite_friend_screen.dart';
+import 'package:fit_pro_client/screens/profile_screen/account_details_screen.dart';
+import 'package:fit_pro_client/screens/profile_screen/help_support_screen.dart';
+import 'package:fit_pro_client/screens/profile_screen/login_security_screen.dart';
+import 'package:fit_pro_client/screens/profile_screen/notification_settings_screen.dart';
+import 'package:fit_pro_client/screens/profile_screen/payment_methods_screen.dart';
+import 'package:fit_pro_client/screens/profile_screen/promotions_screen.dart';
 import 'package:fit_pro_client/screens/profile_screen/statistics_screen.dart';
 import 'package:fit_pro_client/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:lottie/lottie.dart';
 
-class UserProfileScreen extends StatelessWidget {
-  const UserProfileScreen({super.key});
+class ProfileScreen extends StatelessWidget {
+  const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -73,10 +79,24 @@ class UserProfileScreen extends StatelessWidget {
             ),
             _buildProfileOption(
               context: context,
-              title: 'Detajet e llogarisë',
+              title: 'Info personale',
               subtitle: 'Shiko dhe menaxho të dhënat e tua personale',
               onTap: () {
-                // Navigate to the user's requests screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AccountDetailsScreen()),
+                );
+              },
+            ),
+            _buildProfileOption(
+              context: context,
+              title: 'Hyrje & Siguria',
+              subtitle: 'Menaxho fjalëkalimet dhe sigurinë e llogarisë',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginSecurityScreen()),
+                );
               },
             ),
             _buildProfileOption(
@@ -84,10 +104,10 @@ class UserProfileScreen extends StatelessWidget {
               title: 'Metodat e Pagesës',
               subtitle: 'Shto, modifiko, ose hiq opsionet e pagesave',
               onTap: () {
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(builder: (context) => const PaymentScreen()),
-                // );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PaymentMethodsScreen()),
+                );
               },
             ),
             _buildProfileOption(
@@ -106,7 +126,10 @@ class UserProfileScreen extends StatelessWidget {
               title: 'Konfigurimet e Njoftimeve',
               subtitle: 'Menaxho preferencat e njoftimeve',
               onTap: () {
-                // Navigate to notifications settings
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const NotificationSettingsScreen()),
+                );
               },
             ),
             _buildProfileOption(
@@ -114,7 +137,10 @@ class UserProfileScreen extends StatelessWidget {
               title: 'Promocionet dhe Zbritjet',
               subtitle: 'Shiko zbritjet dhe ofertat e disponueshme',
               onTap: () {
-                // Navigate to promotions screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PromotionsScreen()),
+                );
               },
             ),
             _buildProfileOption(
@@ -122,7 +148,10 @@ class UserProfileScreen extends StatelessWidget {
               title: 'Kerko ndihme',
               subtitle: 'Merr ndihmë ose kontakto per cdo paqartesi apo informacion',
               onTap: () {
-                // Navigate to support screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HelpSupportScreen()),
+                );
               },
             ),
           ],
